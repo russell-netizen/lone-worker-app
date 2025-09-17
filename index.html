@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lone Worker Safety</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/long-press-event/dist/long-press-event.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+        .long-press-btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 0.5rem;
+            transition: width 2s linear;
+        }
+        .long-press-btn.pressing::after {
+            width: 100%;
+        }
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+        .slider-thumb::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white h-full overflow-hidden">
+
+    <div id="app-container" class="h-full flex flex-col">
+        
+        <!-- Main/Visit Page -->
+        <div id="mainPage" class="page active flex-grow flex flex-col p-4 bg-gray-800 animate-fadeIn">
+            <header class="flex justify-between items-center mb-4">
+                <h1 class="text-2xl font-bold text-blue-400">Lone Worker Safety</h1>
+                <div>
+                    <button id="infoBtn" class="p-2 rounded-full hover:bg-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                    </button>
+                    <button id="settingsBtn" class="p-2 rounded-full hover:bg-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2.82l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2.82l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Location List -->
+            <div class="bg-gray-900 rounded-lg p-4 mb-4 flex-grow overflow-y-auto">
+                <h2 class="text-lg font-semibold mb-2 text-gray-300">Select Location</h2>
+                <div id="locationList" class="space-y-2">
+                    <!-- Locations will be dynamically inserted here -->
+                </div>
+                <button id="addLocationBtn" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><line x1="12" y1="5" y2="19"></line><line x1="5" y1="12" y2="19"></line></svg>
+                    Add New Location
+                </button>
+            </div>
+            
+            <!-- Visit Duration -->
+            <div class="bg-gray-900 rounded-lg p-4 mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-lg font-semibold text-gray-300">Visit Duration</h2>
+                    <span id="durationDisplay" class="text-xl font-bold text-blue-400">0 mins</span>
+                </div>
+                <input id="durationSlider" type="range" min="0" max="15" value="0" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb">
+            </div>
+
+            <!-- Arrived Button -->
+            <button id="arrivedBtn" data-long-press-delay="2000" disabled class="long-press-btn relative w-full bg-gray-700 text-gray-400 font-bold py-4 px-4 rounded-lg text-xl transition-colors duration-300">
+                Select Location & Duration
+            </button>
+        </div>
+
+        <!-- On-Site / Locked Screen Page -->
+        <div id="lockedPage" class="page bg-gray-900 h-full flex flex-col justify-around items-center p-6 text-center animate-fadeIn">
+            <div>
+                <p class="text-xl text-gray-400">Currently at</p>
+                <h2 id="lockedLocationName" class="text-4xl font-bold mt-2 text-blue-400"></h2>
+            </div>
+
+            <div class="my-8">
+                <p class="text-2xl text-gray-400">Time Remaining</p>
+                <div id="countdownTimer" class="text-7xl font-bold tracking-tighter my-2">00:00:00</div>
+                <p class="text-lg text-gray-400">Anticipated Departure: <span id="lockedAnticipatedTime" class="font-semibold"></span></p>
+            </div>
+            
+            <div id="alertActiveContainer" class="hidden w-full">
+                <div class="bg-red-900/50 border border-red-700 rounded-lg p-4 mb-4">
+                    <h3 class="text-xl font-bold text-red-300">ALERT ACTIVE</h3>
+                    <p class="text-red-400">Notifications have been sent to your emergency contact.</p>
+                </div>
+                <button id="iamSafeBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-4 rounded-lg text-xl mb-4">
+                    I AM SAFE
+                </button>
+            </div>
+
+            <div id="normalButtonsContainer" class="w-full space-y-4">
+                <button id="extendBtn" data-long-press-delay="2000" class="long-press-btn relative w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-4 rounded-lg text-xl">
+                    Extend 10 Mins
+                </button>
+                <button id="departBtn" data-long-press-delay="2000" class="long-press-btn relative w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-4 rounded-lg text-xl">
+                    DEPART
+                </button>
+            </div>
+        </div>
+
+        <!-- Settings Page -->
+        <div id="settingsPage" class="page flex-grow flex flex-col p-4 bg-gray-800 animate-fadeIn overflow-y-auto">
+             <header class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-blue-400">Settings</h1>
+                <button id="closeSettingsBtn" class="p-2 rounded-full hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </header>
+            
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label for="workerName" class="block text-sm font-medium text-gray-400">Your Name</label>
+                    <input type="text" id="workerName" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="workerPhone" class="block text-sm font-medium text-gray-400">Your Phone Number</label>
+                    <input type="tel" id="workerPhone" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="emergencyName" class="block text-sm font-medium text-gray-400">Emergency Contact Name</label>
+                    <input type="text" id="emergencyName" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="relative">
+                    <label for="emergencyPhone" class="block text-sm font-medium text-gray-400">Emergency Contact Phone</label>
+                    <input type="tel" id="emergencyPhone" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <button id="sendTestSmsBtn" class="absolute right-2 top-7 text-sm text-blue-400 hover:text-blue-300">Test SMS</button>
+                </div>
+                <div>
+                    <label for="escalationName" class="block text-sm font-medium text-gray-400">Escalation Contact Name</label>
+                    <input type="text" id="escalationName" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="escalationPhone" class="block text-sm font-medium text-gray-400">Escalation Contact Phone</label>
+                    <input type="tel" id="escalationPhone" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="pinCode" class="block text-sm font-medium text-gray-400">4-Digit PIN (for secure actions)</label>
+                    <input type="password" id="pinCode" pattern="[0-9]*" inputmode="numeric" maxlength="4" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="googleSheetUrl" class="block text-sm font-medium text-gray-400">Google Sheet Web App URL</label>
+                    <input type="url" id="googleSheetUrl" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+
+            <div class="mt-auto">
+                <button id="saveSettingsBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg">Save Settings</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <div id="modalBackdrop" class="fixed inset-0 bg-black bg-opacity-70 hidden flex items-center justify-center p-4">
+        
+        <!-- Add/Edit Location Modal -->
+        <div id="locationModal" class="hidden bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 animate-fadeIn">
+            <h2 id="locationModalTitle" class="text-xl font-bold mb-4">Add New Location</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="locationName" class="block text-sm font-medium text-gray-400">Location Name</label>
+                    <input type="text" id="locationName" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="locationAddress" class="block text-sm font-medium text-gray-400">Location Address</label>
+                    <input type="text" id="locationAddress" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <button id="useCurrentLocationBtn" class="mt-2 text-sm text-blue-400 hover:text-blue-300">Use Current Location</button>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button id="deleteLocationBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg hidden">Delete</button>
+                <button id="cancelLocationBtn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">Cancel</button>
+                <button id="saveLocationBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Save</button>
+            </div>
+        </div>
+
+        <!-- Info Modal -->
+        <div id="infoModal" class="hidden bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-6 animate-fadeIn max-h-[90vh] overflow-y-auto">
+            <h2 class="text-xl font-bold mb-4">How to Use This App</h2>
+            <div class="text-gray-300 space-y-4">
+                <p>This app helps ensure the safety of lone workers by logging visits and sending automated alerts if a worker is overdue.</p>
+                <div>
+                    <h3 class="font-semibold text-lg text-blue-400">1. Initial Setup (Crucial)</h3>
+                    <p>Go to Settings and fill in ALL fields. You MUST provide a Google Sheet Web App URL for data logging. Without it, the app cannot record your visits.</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg text-blue-400">2. Setting up Google Sheets</h3>
+                    <ol class="list-decimal list-inside space-y-2 mt-2 pl-4">
+                        <li>Create a new Google Sheet. Add these headers in the first row: `Date`, `LocationName`, `LocationAddress`, `ArrivalTime`, `ActualDepartureTime`, `AnticipatedDepartureTime`, `AlarmStatus`, `WorkerName`, `WorkerPhoneNumber`, `EmergencyContact`, `EmergencyContactNumber`, `Notes`.</li>
+                        <li>In the Sheet, go to `Extensions > Apps Script`.</li>
+                        <li>Delete any existing code and paste the code provided below.</li>
+                        <li>Click the "Save project" icon.</li>
+                        <li>Click the "Deploy" button, then "New deployment".</li>
+                        <li>For "Select type", choose "Web app".</li>
+                        <li>Under "Configuration", set "Execute as" to "Me".</li>
+                        <li>Crucially, set **"Who has access" to "Anyone"**. This does NOT make your sheet public, it only allows this script to add rows.</li>
+                        <li>Click "Deploy". You will need to "Authorize access" with your Google account. Click through the advanced/unsafe warnings.</li>
+                        <li>Copy the generated "Web app URL" and paste it into the Settings page of this app.</li>
+                    </ol>
+                </div>
+                <div class="mt-4">
+                    <h3 class="font-semibold text-lg text-blue-400">Google Apps Script Code:</h3>
+                    <pre class="bg-gray-900 text-sm text-yellow-300 p-3 rounded-md overflow-x-auto"><code>function doPost(e) {
+  try {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+    var data = JSON.parse(e.postData.contents);
+    
+    // Find a row to update or append a new one
+    var lastRow = sheet.getLastRow();
+    var arrivalTimes = sheet.getRange(2, 4, lastRow > 1 ? lastRow - 1 : 1, 1).getValues();
+    var workerNames = sheet.getRange(2, 8, lastRow > 1 ? lastRow - 1 : 1, 1).getValues();
+    
+    var rowToUpdate = -1;
+    // Search backwards for the latest entry for this worker
+    for (var i = arrivalTimes.length - 1; i >= 0; i--) {
+      if (arrivalTimes[i][0] == data.ArrivalTime && workerNames[i][0] == data.WorkerName) {
+        rowToUpdate = i + 2; // +2 because sheets are 1-indexed and we skipped header
+        break;
+      }
+    }
+
+    if (rowToUpdate != -1) {
+      // Update existing row
+      var range = sheet.getRange(rowToUpdate, 1, 1, 12);
+      var currentValues = range.getValues()[0];
+      var newValues = [
+        data.Date || currentValues[0],
+        data.LocationName || currentValues[1],
+        data.LocationAddress || currentValues[2],
+        data.ArrivalTime || currentValues[3],
+        data.ActualDepartureTime || currentValues[4],
+        data.AnticipatedDepartureTime || currentValues[5],
+        data.AlarmStatus || currentValues[6],
+        data.WorkerName || currentValues[7],
+        data.WorkerPhoneNumber || currentValues[8],
+        data.EmergencyContact || currentValues[9],
+        data.EmergencyContactNumber || currentValues[10],
+        data.Notes ? (currentValues[11] ? currentValues[11] + '; ' + data.Notes : data.Notes) : currentValues[11]
+      ];
+      range.setValues([newValues]);
+
+    } else {
+      // Append new row
+      sheet.appendRow([
+        data.Date, data.LocationName, data.LocationAddress,
+        data.ArrivalTime, data.ActualDepartureTime, data.AnticipatedDepartureTime,
+        data.AlarmStatus, data.WorkerName, data.WorkerPhoneNumber,
+        data.EmergencyContact, data.EmergencyContactNumber, data.Notes || ""
+      ]);
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({ "status": "success", "row": rowToUpdate }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ "status": "error", "message": error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}</code></pre>
+                </div>
+                 <div class="mt-4">
+                    <h3 class="font-semibold text-lg text-blue-400">Important Note on SMS</h3>
+                    <p>For security reasons, this web app cannot send SMS messages automatically. When an alert is triggered, it will open your phone's default messaging app with the message pre-filled. **You must press 'Send' yourself.**</p>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button id="closeInfoBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Close</button>
+            </div>
+        </div>
+        
+        <!-- PIN Modal -->
+        <div id="pinModal" class="hidden bg-gray-800 rounded-lg shadow-xl w-full max-w-xs p-6 animate-fadeIn text-center">
+             <h2 id="pinModalTitle" class="text-xl font-bold mb-4">Enter PIN</h2>
+             <p id="pinModalPrompt" class="text-gray-400 mb-4">Please enter your 4-digit PIN to proceed.</p>
+             <input type="password" id="pinInput" maxlength="4" class="text-center text-3xl tracking-[1em] w-48 mx-auto bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500" inputmode="numeric">
+             <div class="mt-6 flex justify-end space-x-3">
+                <button id="cancelPinBtn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">Cancel</button>
+                <button id="confirmPinBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Confirm</button>
+             </div>
+        </div>
+
+        <!-- Custom Alert Modal -->
+        <div id="alertModal" class="hidden bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 animate-fadeIn text-center">
+            <h2 id="alertModalTitle" class="text-xl font-bold mb-2">Alert</h2>
+            <p id="alertModalMessage" class="text-gray-300 mb-6"></p>
+            <button id="alertModalOkBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg w-24">OK</button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const pages = {
+            main: document.getElementById('mainPage'),
+            locked: document.getElementById('lockedPage'),
+            settings: document.getElementById('settingsPage'),
+        };
+        const modals = {
+            backdrop: document.getElementById('modalBackdrop'),
+            location: document.getElementById('locationModal'),
+            info: document.getElementById('infoModal'),
+            pin: document.getElementById('pinModal'),
+            alert: document.getElementById('alertModal'),
+        };
+        const locationList = document.getElementById('locationList');
+        const arrivedBtn = document.getElementById('arrivedBtn');
+        const durationSlider = document.getElementById('durationSlider');
+        const durationDisplay = document.getElementById('durationDisplay');
+        
+        // --- App State ---
+        let state = {
+            settings: {
+                workerName: '', workerPhone: '',
+                emergencyName: '', emergencyPhone: '',
+                escalationName: '', escalationPhone: '',
+                pinCode: '', googleSheetUrl: ''
+            },
+            locations: [],
+            selectedLocationId: null,
+            visitDurationMinutes: 0,
+            activeVisit: null, // { locationId, startTime, anticipatedDepartureTime, arrivalTimeForSheet, alertState }
+        };
+
+        // --- Constants ---
+        const DURATION_STEPS = [0, 10, 15, 20, 30, 45, 60, 75, 90, 105, 120, 150, 180, 240, 300]; // in minutes
+
+        // --- Core Functions ---
+        
+        function navigate(page) {
+            Object.values(pages).forEach(p => p.classList.remove('active'));
+            if (pages[page]) {
+                pages[page].classList.add('active');
+            }
+        }
+        
+        function showModal(modal, onShow) {
+            modals.backdrop.classList.remove('hidden');
+            Object.values(modals).forEach(m => {
+                if(m !== modals.backdrop) m.classList.add('hidden');
+            });
+            if(modals[modal]) {
+                modals[modal].classList.remove('hidden');
+                if(onShow) onShow();
+            }
+        }
+
+        function hideModals() {
+            modals.backdrop.classList.add('hidden');
+        }
+
+        function showAlert(title, message) {
+            document.getElementById('alertModalTitle').textContent = title;
+            document.getElementById('alertModalMessage').textContent = message;
+            showModal('alert');
+        }
+
+        function loadState() {
+            const savedState = JSON.parse(localStorage.getItem('loneWorkerState'));
+            if (savedState) {
+                state = { ...state, ...savedState };
+                // Ensure activeVisit times are Date objects
+                if (state.activeVisit) {
+                    state.activeVisit.startTime = new Date(state.activeVisit.startTime);
+                    state.activeVisit.anticipatedDepartureTime = new Date(state.activeVisit.anticipatedDepartureTime);
+                }
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem('loneWorkerState', JSON.stringify(state));
+        }
+
+        function renderLocations() {
+            locationList.innerHTML = '';
+            if (state.locations.length === 0) {
+                locationList.innerHTML = `<p class="text-gray-500 text-center">No locations added yet.</p>`;
+            }
+            state.locations.sort((a,b) => a.name.localeCompare(b.name)).forEach(loc => {
+                const isSelected = loc.id === state.selectedLocationId;
+                const locationEl = document.createElement('div');
+                locationEl.className = `p-3 rounded-lg cursor-pointer border-2 ${isSelected ? 'bg-blue-900/50 border-blue-500' : 'bg-gray-800 border-transparent hover:border-gray-600'}`;
+                locationEl.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="font-semibold">${loc.name}</p>
+                            <p class="text-sm text-gray-400">${loc.address}</p>
+                        </div>
+                        <button class="edit-location-btn p-2 rounded-full hover:bg-gray-700" data-id="${loc.id}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                        </button>
+                    </div>
+                `;
+                locationEl.addEventListener('click', () => {
+                    state.selectedLocationId = loc.id;
+                    renderLocations();
+                    updateArrivedButtonState();
+                });
+                locationList.appendChild(locationEl);
+            });
+        }
+        
+        function formatDuration(minutes) {
+            if (minutes < 60) return `${minutes} mins`;
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours}h${mins > 0 ? ` ${mins}m` : ''}`;
+        }
+
+        function updateArrivedButtonState() {
+            if (state.selectedLocationId && state.visitDurationMinutes > 0) {
+                arrivedBtn.disabled = false;
+                arrivedBtn.classList.remove('bg-gray-700', 'text-gray-400');
+                arrivedBtn.classList.add('bg-green-600', 'hover:bg-green-700', 'text-white');
+                arrivedBtn.textContent = 'ARRIVE (Hold 2s)';
+            } else {
+                arrivedBtn.disabled = true;
+                arrivedBtn.classList.add('bg-gray-700', 'text-gray-400');
+                arrivedBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'text-white');
+                if (!state.selectedLocationId) {
+                    arrivedBtn.textContent = 'Select Location';
+                } else {
+                    arrivedBtn.textContent = 'Set Duration';
+                }
+            }
+        }
+
+        async function sendToGoogleSheet(data) {
+            if (!state.settings.googleSheetUrl) {
+                console.error("Google Sheet URL is not set.");
+                showAlert("Error", "Google Sheet URL is not configured in settings. Data was not saved.");
+                return;
+            }
+
+            const payload = {
+                ...data,
+                WorkerName: state.settings.workerName,
+                WorkerPhoneNumber: state.settings.workerPhone,
+                EmergencyContact: state.settings.emergencyName,
+                EmergencyContactNumber: state.settings.emergencyPhone,
+            };
+            
+            try {
+                const response = await fetch(state.settings.googleSheetUrl, {
+                    method: 'POST',
+                    mode: 'no-cors', // Important for Apps Script web apps
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                console.log('Data sent to Google Sheet.');
+            } catch (error) {
+                console.error('Error sending data to Google Sheet:', error);
+                showAlert("Network Error", "Failed to send data to Google Sheet. Please check your connection.");
+            }
+        }
+
+        function withPinVerification(callback) {
+            if (!state.settings.pinCode) {
+                showAlert("PIN Not Set", "Please set a 4-digit PIN in settings for secure actions.");
+                return;
+            }
+            showModal('pin');
+            
+            const confirmHandler = () => {
+                const pinInput = document.getElementById('pinInput');
+                if (pinInput.value === state.settings.pinCode) {
+                    hideModals();
+                    pinInput.value = '';
+                    callback();
+                } else {
+                    showAlert("Incorrect PIN", "The PIN you entered is incorrect.");
+                    pinInput.value = '';
+                }
+                cleanup();
+            };
+            
+            const cancelHandler = () => {
+                document.getElementById('pinInput').value = '';
+                hideModals();
+                cleanup();
+            };
+
+            const cleanup = () => {
+                document.getElementById('confirmPinBtn').removeEventListener('click', confirmHandler);
+                document.getElementById('cancelPinBtn').removeEventListener('click', cancelHandler);
+            };
+
+            document.getElementById('confirmPinBtn').addEventListener('click', confirmHandler);
+            document.getElementById('cancelPinBtn').addEventListener('click', cancelHandler);
+        }
+
+        // --- Visit Lifecycle ---
+        let visitInterval;
+
+        async function startVisit() {
+            // 1. Pre-checks
+            if (!navigator.onLine) {
+                showAlert("No Network", "A network connection is required to start a visit.");
+                return;
+            }
+
+            // Mute Check (workaround)
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
+                await audio.play();
+            } catch (error) {
+                 showAlert("Mute Warning", "Your phone appears to be on silent. You may not hear calls from your emergency contact if you become overdue.");
+            }
+            
+            // Battery Check
+            if (navigator.getBattery) {
+                const battery = await navigator.getBattery();
+                const batteryLifeSeconds = battery.dischargingTime;
+                const visitDurationSeconds = state.visitDurationMinutes * 60;
+                if (battery.level < 0.20 && !battery.charging) {
+                     showAlert("Low Battery", `Battery is at ${Math.floor(battery.level * 100)}%. It may not last for the duration of this visit.`);
+                }
+            }
+
+            const location = state.locations.find(l => l.id === state.selectedLocationId);
+            const now = new Date();
+            const anticipatedDepartureTime = new Date(now.getTime() + state.visitDurationMinutes * 60 * 1000);
+            
+            state.activeVisit = {
+                locationId: location.id,
+                startTime: now,
+                anticipatedDepartureTime: anticipatedDepartureTime,
+                arrivalTimeForSheet: now.toISOString(),
+                alertState: 0, // 0: none, 1: 10m, 2: 15m, 3: 30m, 4: 45m, 5: 60m
+            };
+
+            saveState();
+            
+            sendToGoogleSheet({
+                Date: now.toLocaleDateString(),
+                LocationName: location.name,
+                LocationAddress: location.address,
+                ArrivalTime: state.activeVisit.arrivalTimeForSheet,
+                AnticipatedDepartureTime: anticipatedDepartureTime.toISOString(),
+                AlarmStatus: 'ON SITE',
+            });
+
+            enterLockedScreen();
+        }
+
+        function enterLockedScreen() {
+            const location = state.locations.find(l => l.id === state.activeVisit.locationId);
+            document.getElementById('lockedLocationName').textContent = location.name;
+            updateLockedScreen();
+            navigate('locked');
+            visitInterval = setInterval(tick, 1000);
+        }
+
+        function updateLockedScreen() {
+            const now = new Date();
+            const remaining = state.activeVisit.anticipatedDepartureTime.getTime() - now.getTime();
+            
+            if (remaining > 0) {
+                const hours = Math.floor(remaining / (1000 * 60 * 60));
+                const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+                document.getElementById('countdownTimer').textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                document.getElementById('countdownTimer').classList.remove('text-red-500');
+
+            } else {
+                const overdue = now.getTime() - state.activeVisit.anticipatedDepartureTime.getTime();
+                const hours = Math.floor(overdue / (1000 * 60 * 60));
+                const minutes = Math.floor((overdue % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((overdue % (1000 * 60)) / 1000);
+                document.getElementById('countdownTimer').textContent = `+${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                document.getElementById('countdownTimer').classList.add('text-red-500');
+            }
+            
+            document.getElementById('lockedAnticipatedTime').textContent = state.activeVisit.anticipatedDepartureTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'});
+        }
+
+        function depart() {
+            const now = new Date();
+            sendToGoogleSheet({
+                ArrivalTime: state.activeVisit.arrivalTimeForSheet,
+                ActualDepartureTime: now.toISOString(),
+                AlarmStatus: 'DEPARTED',
+            });
+            endVisit();
+        }
+
+        function extendVisit() {
+            state.activeVisit.anticipatedDepartureTime = new Date(state.activeVisit.anticipatedDepartureTime.getTime() + 10 * 60 * 1000);
+            saveState();
+            sendToGoogleSheet({
+                ArrivalTime: state.activeVisit.arrivalTimeForSheet,
+                AnticipatedDepartureTime: state.activeVisit.anticipatedDepartureTime.toISOString(),
+                Notes: `Extended 10 mins at ${new Date().toLocaleTimeString()}`,
+            });
+            updateLockedScreen();
+        }
+
+        function iamSafe() {
+            const now = new Date();
+             sendToGoogleSheet({
+                ArrivalTime: state.activeVisit.arrivalTimeForSheet,
+                ActualDepartureTime: now.toISOString(),
+                AlarmStatus: 'SAFE - MANUALLY CLEARED',
+            });
+            
+            // SMS intent to cancel
+            const contactPhone = state.settings.emergencyPhone;
+            const workerName = state.settings.workerName;
+            const message = `CANCEL NOTIFICATION: ${workerName} has now confirmed they are safe.`;
+            window.location.href = `sms:${contactPhone}?body=${encodeURIComponent(message)}`;
+
+            endVisit();
+        }
+
+        function endVisit() {
+            clearInterval(visitInterval);
+            state.activeVisit = null;
+            state.selectedLocationId = null;
+            state.visitDurationMinutes = 0;
+            durationSlider.value = 0;
+            durationDisplay.textContent = formatDuration(0);
+            saveState();
+            navigate('main');
+            renderLocations();
+            updateArrivedButtonState();
+            document.getElementById('alertActiveContainer').classList.add('hidden');
+            document.getElementById('normalButtonsContainer').classList.remove('hidden');
+        }
+
+        function tick() {
+            if (!state.activeVisit) {
+                clearInterval(visitInterval);
+                return;
+            }
+            updateLockedScreen();
+            
+            const now = new Date().getTime();
+            const departureTime = state.activeVisit.anticipatedDepartureTime.getTime();
+            const overdueMinutes = (now - departureTime) / (1000 * 60);
+            
+            const location = state.locations.find(l => l.id === state.activeVisit.locationId);
+            const workerName = state.settings.workerName;
+            const workerPhone = state.settings.workerPhone;
+            const anticipatedTimeStr = state.activeVisit.anticipatedDepartureTime.toLocaleTimeString();
+            const gmapsLink = `https://www.google.com/maps?q=${encodeURIComponent(location.address)}`;
+
+            const baseMessage = `Worker: ${workerName} is visiting "${location.name}" and is now overdue. Expected departure time was ${anticipatedTimeStr}. Please call ${workerName} on ${workerPhone} and check their status. Location: ${gmapsLink}`;
+
+            // Alert logic
+            if (overdueMinutes >= 60 && state.activeVisit.alertState < 5) {
+                state.activeVisit.alertState = 5;
+                const contactPhone = state.settings.escalationPhone;
+                const message = `ESCALATION: ${baseMessage}`;
+                window.location.href = `sms:${contactPhone}?body=${encodeURIComponent(message)}`;
+                sendToGoogleSheet({ ArrivalTime: state.activeVisit.arrivalTimeForSheet, AlarmStatus: 'ESCALATION SENT' });
+            } else if (overdueMinutes >= 45 && state.activeVisit.alertState < 4) {
+                 state.activeVisit.alertState = 4;
+                 const contactPhone = state.settings.emergencyPhone;
+                 const message = `FINAL NOTICE: ${baseMessage}`;
+                 window.location.href = `sms:${contactPhone}?body=${encodeURIComponent(message)}`;
+            } else if (overdueMinutes >= 30 && state.activeVisit.alertState < 3) {
+                 state.activeVisit.alertState = 3;
+                 const contactPhone = state.settings.emergencyPhone;
+                 window.location.href = `sms:${contactPhone}?body=${encodeURIComponent(baseMessage)}`;
+            } else if (overdueMinutes >= 15 && state.activeVisit.alertState < 2) {
+                 state.activeVisit.alertState = 2;
+                 const contactPhone = state.settings.emergencyPhone;
+                 window.location.href = `sms:${contactPhone}?body=${encodeURIComponent(baseMessage)}`;
+                 sendToGoogleSheet({ ArrivalTime: state.activeVisit.arrivalTimeForSheet, AlarmStatus: 'ALERT SENT' });
+                 document.getElementById('alertActiveContainer').classList.remove('hidden');
+                 document.getElementById('normalButtonsContainer').classList.add('hidden');
+            } else if (overdueMinutes >= 10 && state.activeVisit.alertState < 1) {
+                state.activeVisit.alertState = 1;
+                if('vibrate' in navigator) navigator.vibrate([500, 200, 500, 200, 500]);
+            }
+            saveState();
+        }
+
+        // --- Event Listeners ---
+        function initEventListeners() {
+            // Navigation
+            document.getElementById('settingsBtn').addEventListener('click', () => {
+                // Populate settings fields
+                Object.keys(state.settings).forEach(key => {
+                    const input = document.getElementById(key);
+                    if (input) input.value = state.settings[key];
+                });
+                navigate('settings');
+            });
+            document.getElementById('closeSettingsBtn').addEventListener('click', () => navigate('main'));
+
+            // Info Modal
+            document.getElementById('infoBtn').addEventListener('click', () => showModal('info'));
+            document.getElementById('closeInfoBtn').addEventListener('click', hideModals);
+            
+            // Alert Modal
+            document.getElementById('alertModalOkBtn').addEventListener('click', hideModals);
+
+            // Settings Page
+            document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+                Object.keys(state.settings).forEach(key => {
+                    const input = document.getElementById(key);
+                    if (input) state.settings[key] = input.value;
+                });
+                saveState();
+                showAlert("Success", "Settings have been saved.");
+                navigate('main');
+            });
+
+            document.getElementById('sendTestSmsBtn').addEventListener('click', () => {
+                const phone = document.getElementById('emergencyPhone').value;
+                if (!phone) {
+                    showAlert("Missing Info", "Please enter an emergency contact phone number first.");
+                    return;
+                }
+                const message = "This is a test message from the Lone Worker Safety App.";
+                window.location.href = `sms:${phone}?body=${encodeURIComponent(message)}`;
+            });
+
+            // Location Modal
+            document.getElementById('addLocationBtn').addEventListener('click', () => {
+                document.getElementById('locationModalTitle').textContent = 'Add New Location';
+                document.getElementById('locationName').value = '';
+                document.getElementById('locationAddress').value = '';
+                document.getElementById('deleteLocationBtn').classList.add('hidden');
+                document.querySelector('#saveLocationBtn').dataset.id = '';
+                showModal('location');
+            });
+
+            locationList.addEventListener('click', e => {
+                const editBtn = e.target.closest('.edit-location-btn');
+                if (editBtn) {
+                    e.stopPropagation();
+                    const locId = editBtn.dataset.id;
+                    const location = state.locations.find(l => l.id === locId);
+                    document.getElementById('locationModalTitle').textContent = 'Edit Location';
+                    document.getElementById('locationName').value = location.name;
+                    document.getElementById('locationAddress').value = location.address;
+                    document.getElementById('deleteLocationBtn').classList.remove('hidden');
+                    document.querySelector('#saveLocationBtn').dataset.id = locId;
+                    document.querySelector('#deleteLocationBtn').dataset.id = locId;
+                    showModal('location');
+                }
+            });
+
+            document.getElementById('cancelLocationBtn').addEventListener('click', hideModals);
+            document.getElementById('saveLocationBtn').addEventListener('click', () => {
+                const id = document.querySelector('#saveLocationBtn').dataset.id;
+                const name = document.getElementById('locationName').value.trim();
+                const address = document.getElementById('locationAddress').value.trim();
+
+                if (!name || !address) {
+                    showAlert("Missing Info", "Please provide both a name and an address for the location.");
+                    return;
+                }
+
+                if (id) { // Editing
+                    const index = state.locations.findIndex(l => l.id === id);
+                    state.locations[index] = { ...state.locations[index], name, address };
+                } else { // Adding
+                    state.locations.push({ id: `loc_${Date.now()}`, name, address });
+                }
+                saveState();
+                renderLocations();
+                hideModals();
+            });
+
+            document.getElementById('deleteLocationBtn').addEventListener('click', (e) => {
+                const id = e.target.dataset.id;
+                state.locations = state.locations.filter(l => l.id !== id);
+                if (state.selectedLocationId === id) {
+                    state.selectedLocationId = null;
+                }
+                saveState();
+                renderLocations();
+                hideModals();
+            });
+            
+            document.getElementById('useCurrentLocationBtn').addEventListener('click', () => {
+                if (!navigator.geolocation) {
+                    showAlert("Not Supported", "Geolocation is not supported by your browser.");
+                    return;
+                }
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const { latitude, longitude } = position.coords;
+                        // Using a free reverse geocoding API. Replace if it becomes unreliable.
+                        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            document.getElementById('locationAddress').value = data.display_name || `${latitude}, ${longitude}`;
+                        })
+                        .catch(() => {
+                           showAlert("Error", "Could not fetch address. Using coordinates instead.");
+                           document.getElementById('locationAddress').value = `${latitude}, ${longitude}`;
+                        });
+                    },
+                    () => showAlert("Error", "Unable to retrieve your location.")
+                );
+            });
+
+            // Duration Slider
+            durationSlider.addEventListener('input', (e) => {
+                state.visitDurationMinutes = DURATION_STEPS[parseInt(e.target.value)];
+                durationDisplay.textContent = formatDuration(state.visitDurationMinutes);
+                updateArrivedButtonState();
+            });
+
+            // Long Press Buttons
+            arrivedBtn.addEventListener('long-press', startVisit);
+            departBtn.addEventListener('long-press', depart);
+            extendBtn.addEventListener('long-press', () => withPinVerification(extendVisit));
+            
+            document.querySelectorAll('.long-press-btn').forEach(btn => {
+                btn.addEventListener('mousedown', () => btn.classList.add('pressing'));
+                btn.addEventListener('mouseup', () => btn.classList.remove('pressing'));
+                btn.addEventListener('mouseleave', () => btn.classList.remove('pressing'));
+                btn.addEventListener('touchstart', () => btn.classList.add('pressing'));
+                btn.addEventListener('touchend', () => btn.classList.remove('pressing'));
+            });
+
+            // Safe Button
+            document.getElementById('iamSafeBtn').addEventListener('click', () => withPinVerification(iamSafe));
+        }
+
+        // --- Initialization ---
+        function init() {
+            loadState();
+            if (state.activeVisit) {
+                enterLockedScreen();
+            } else {
+                navigate('main');
+                renderLocations();
+                updateArrivedButtonState();
+            }
+            initEventListeners();
+        }
+
+        window.addEventListener('load', init);
+
+    </script>
+</body>
+</html>
