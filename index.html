@@ -71,13 +71,13 @@
         
         <!-- Main/Visit Page -->
         <div id="mainPage" class="page active flex-grow flex flex-col p-4 bg-gray-800 animate-fadeIn">
-            <header class="flex justify-between items-center mb-4">
+            <header class="flex justify-between items-center mb-4 relative z-10">
                 <h1 class="text-2xl font-bold text-blue-400">Lone Worker Safety</h1>
-                <div>
-                    <button id="infoBtn" class="p-2 rounded-full hover:bg-gray-700">
+                <div class="flex items-center space-x-1">
+                    <button id="infoBtn" class="p-3 rounded-full hover:bg-gray-700">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
                     </button>
-                    <button id="settingsBtn" class="p-2 rounded-full hover:bg-gray-700">
+                    <button id="settingsBtn" class="p-3 rounded-full hover:bg-gray-700">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2.82l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l-.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2.82l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                     </button>
                 </div>
@@ -144,51 +144,54 @@
         </div>
 
         <!-- Settings Page -->
-        <div id="settingsPage" class="page flex-grow flex flex-col p-4 bg-gray-800 animate-fadeIn overflow-y-auto">
-             <header class="flex justify-between items-center mb-6">
+        <div id="settingsPage" class="page flex-grow flex flex-col p-4 bg-gray-800 animate-fadeIn">
+             <header class="flex justify-between items-center mb-6 relative z-10">
                 <h1 class="text-2xl font-bold text-blue-400">Settings</h1>
-                <button id="closeSettingsBtn" class="p-2 rounded-full hover:bg-gray-700">
+                <button id="closeSettingsBtn" class="p-3 rounded-full hover:bg-gray-700">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </header>
             
-            <div class="space-y-4 mb-6">
-                <div>
-                    <label for="workerName" class="block text-sm font-medium text-gray-400">Your Name</label>
-                    <input type="text" id="workerName" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div>
-                    <label for="workerPhone" class="block text-sm font-medium text-gray-400">Your Phone Number</label>
-                    <input type="tel" id="workerPhone" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div>
-                    <label for="emergencyName" class="block text-sm font-medium text-gray-400">Emergency Contact Name</label>
-                    <input type="text" id="emergencyName" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div class="relative">
-                    <label for="emergencyPhone" class="block text-sm font-medium text-gray-400">Emergency Contact Phone</label>
-                    <input type="tel" id="emergencyPhone" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    <button id="sendTestSmsBtn" class="absolute right-2 top-7 text-sm text-blue-400 hover:text-blue-300">Test SMS</button>
-                </div>
-                <div>
-                    <label for="escalationName" class="block text-sm font-medium text-gray-400">Escalation Contact Name</label>
-                    <input type="text" id="escalationName" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div>
-                    <label for="escalationPhone" class="block text-sm font-medium text-gray-400">Escalation Contact Phone</label>
-                    <input type="tel" id="escalationPhone" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div>
-                    <label for="pinCode" class="block text-sm font-medium text-gray-400">4-Digit PIN (for secure actions)</label>
-                    <input type="password" id="pinCode" pattern="[0-9]*" inputmode="numeric" maxlength="4" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div>
-                    <label for="googleSheetUrl" class="block text-sm font-medium text-gray-400">Google Sheet Web App URL</label>
-                    <input type="url" id="googleSheetUrl" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            <!-- Scrollable content area -->
+            <div class="flex-1 overflow-y-auto -mx-4 px-4">
+                <div class="space-y-4 mb-6">
+                    <div>
+                        <label for="workerName" class="block text-sm font-medium text-gray-400">Your Name</label>
+                        <input type="text" id="workerName" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="workerPhone" class="block text-sm font-medium text-gray-400">Your Phone Number</label>
+                        <input type="tel" id="workerPhone" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="emergencyName" class="block text-sm font-medium text-gray-400">Emergency Contact Name</label>
+                        <input type="text" id="emergencyName" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="relative">
+                        <label for="emergencyPhone" class="block text-sm font-medium text-gray-400">Emergency Contact Phone</label>
+                        <input type="tel" id="emergencyPhone" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <button id="sendTestSmsBtn" class="absolute right-2 top-7 text-sm text-blue-400 hover:text-blue-300">Test SMS</button>
+                    </div>
+                    <div>
+                        <label for="escalationName" class="block text-sm font-medium text-gray-400">Escalation Contact Name</label>
+                        <input type="text" id="escalationName" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="escalationPhone" class="block text-sm font-medium text-gray-400">Escalation Contact Phone</label>
+                        <input type="tel" id="escalationPhone" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="pinCode" class="block text-sm font-medium text-gray-400">4-Digit PIN (for secure actions)</label>
+                        <input type="password" id="pinCode" pattern="[0-9]*" inputmode="numeric" maxlength="4" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="googleSheetUrl" class="block text-sm font-medium text-gray-400">Google Sheet Web App URL</label>
+                        <input type="url" id="googleSheetUrl" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
                 </div>
             </div>
 
-            <div class="mt-auto">
+            <div class="pt-4">
                 <button id="saveSettingsBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg">Save Settings</button>
             </div>
         </div>
@@ -884,4 +887,3 @@
     </script>
 </body>
 </html>
-
