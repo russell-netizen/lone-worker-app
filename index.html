@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/long-press-event/dist/long-press-event.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -248,7 +249,7 @@
                 <div>
                     <h3 class="font-semibold text-lg text-blue-400">1. Google Sheet Setup</h3>
                     <p>Create a new Google Sheet. Add these exact headers in the first row:</p>
-                    <p class="bg-gray-900 text-sm p-2 rounded-md mt-2">`Date`, `LocationName`, `LocationAddress`, `ArrivalTime`, `ActualDepartureTime`, `AnticipatedDepartureTime`, `AlarmStatus`, `WorkerName`, `WorkerPhoneNumber`, `EmergencyContactName`, `EmergencyContactNumber`, `EmergencyContactEmail`, `EscalationContactName`, `EscalationContactNumber`, `EscalationContactEmail`, `Notes`</p>
+                    <p class="bg-gray-900 text-sm p-2 rounded-md mt-2">`Date`, `LocationName`, `LocationAddress`, `ArrivalTime`, `ActualDepartureTime`, `AnticipatedDepartureTime`, `AlarmStatus`, `WorkerName`, `WorkerPhoneNumber`, `EmergencyContactName`, `EmergencyContactNumber`, `EmergencyContactEmail`, `EscalationContactName`, `EscalationContactNumber`, `EscalationContactEmail`, `LastKnownGPS`, `GPSTimestamp`, `Notes`</p>
                 </div>
 
                 <div>
@@ -297,7 +298,7 @@ function doPost(e) {
 
     if (rowToUpdate !== -1) {
       // Update existing row
-      const range = sheet.getRange(rowToUpdate, 1, 1, 16);
+      const range = sheet.getRange(rowToUpdate, 1, 1, 18);
       const currentValues = range.getValues()[0];
       const newValues = [
         data.Date || currentValues[0], data.LocationName || currentValues[1], data.LocationAddress || currentValues[2],
@@ -305,7 +306,8 @@ function doPost(e) {
         data.AlarmStatus || currentValues[6], data.WorkerName || currentValues[7], data.WorkerPhoneNumber || currentValues[8],
         data.EmergencyContactName || currentValues[9], data.EmergencyContactNumber || currentValues[10], data.EmergencyContactEmail || currentValues[11],
         data.EscalationContactName || currentValues[12], data.EscalationContactNumber || currentValues[13], data.EscalationContactEmail || currentValues[14],
-        data.Notes ? (currentValues[15] ? currentValues[15] + '; ' + data.Notes : data.Notes) : currentValues[15]
+        data.LastKnownGPS || currentValues[15], data.GPSTimestamp || currentValues[16],
+        data.Notes ? (currentValues[17] ? currentValues[17] + '; ' + data.Notes : data.Notes) : currentValues[17]
       ];
       range.setValues([newValues]);
     } else {
@@ -313,7 +315,8 @@ function doPost(e) {
       sheet.appendRow([
         data.Date, data.LocationName, data.LocationAddress, data.ArrivalTime, "", data.AnticipatedDepartureTime,
         data.AlarmStatus, data.WorkerName, data.WorkerPhoneNumber, data.EmergencyContactName, data.EmergencyContactNumber,
-        data.EmergencyContactEmail, data.EscalationContactName, data.EscalationContactNumber, data.EscalationContactEmail, ""
+        data.EmergencyContactEmail, data.EscalationContactName, data.EscalationContactNumber, data.EscalationContactEmail, 
+        "", "", ""
       ]);
     }
     return ContentService.createTextOutput(JSON.stringify({ "status": "success" })).setMimeType(ContentService.MimeType.JSON);
@@ -324,9 +327,7 @@ function doPost(e) {
 
 // 2. This function sets up the automated trigger. Run this once manually.
 function setupTrigger() {
-  // Deletes any existing triggers to avoid duplicates
   ScriptApp.getProjectTriggers().forEach(trigger => ScriptApp.deleteTrigger(trigger));
-  // Creates a new trigger that runs 'checkOverdueWorkers' every 15 minutes
   ScriptApp.newTrigger('checkOverdueWorkers')
       .timeBased()
       .everyMinutes(15)
@@ -341,26 +342,34 @@ function checkOverdueWorkers() {
   const values = dataRange.getValues();
   const now = new Date();
 
-  // Start from row 1 to skip header
   for (let i = 1; i < values.length; i++) {
     const row = values[i];
     const status = row[6]; // Column G: AlarmStatus
     
-    // Only process active visits that haven't been fully escalated
     const activeStatuses = ["ON SITE", "ALERT SENT", "EMAIL_1_SENT", "EMAIL_2_SENT", "EMAIL_3_SENT"];
     if (activeStatuses.includes(status)) {
-      const anticipatedDepartureTime = new Date(row[5]); // Column F
+      const anticipatedDepartureTime = new Date(row[5]);
       const overdueMinutes = (now.getTime() - anticipatedDepartureTime.getTime()) / 60000;
-
+      
       const workerName = row[7];
       const locationName = row[1];
-      const gmapsLink = "https://www.google.com/maps?q=" + encodeURIComponent(row[2]);
+      const locationAddress = row[2];
+      const workerPhone = row[8];
+      const lastKnownGPS = row[15];
+      const gpsTimestamp = row[16] ? new Date(row[16]) : null;
+
+      let locationInfo;
+      if (lastKnownGPS && gpsTimestamp) {
+          locationInfo = `Last known GPS location (at ${gpsTimestamp.toLocaleString()}): https://www.google.com/maps?q=${lastKnownGPS}`;
+      } else {
+          locationInfo = `Location at arrival: https://www.google.com/maps?q=${encodeURIComponent(locationAddress)}`;
+      }
 
       const emailBody = 
           `Worker: ${workerName} is visiting "${locationName}" and is now overdue.
           Expected departure was: ${anticipatedDepartureTime.toLocaleString()}
-          Please call ${workerName} on ${row[8]} to check their status.
-          Location: ${gmapsLink}`;
+          Please call ${workerName} on ${workerPhone} to check their status.
+          ${locationInfo}`;
       
       let recipient, subject, newStatus;
 
@@ -384,7 +393,7 @@ function checkOverdueWorkers() {
       
       if (recipient && newStatus) {
         MailApp.sendEmail(recipient, subject, emailBody);
-        sheet.getRange(i + 1, 7).setValue(newStatus); // Update status in Column G
+        sheet.getRange(i + 1, 7).setValue(newStatus);
       }
     }
   }
@@ -447,11 +456,48 @@ function checkOverdueWorkers() {
             locations: [],
             selectedLocationId: null,
             visitDurationMinutes: 0,
-            activeVisit: null, // { locationId, startTime, anticipatedDepartureTime, arrivalTimeForSheet, alertState }
+            activeVisit: null, // { locationId, startTime, anticipatedDepartureTime, arrivalTimeForSheet, alertState, preWarningSent }
         };
 
         // --- Constants ---
         const DURATION_STEPS = [0, 10, 15, 20, 30, 45, 60, 75, 90, 105, 120, 150, 180, 240, 300]; // in minutes
+
+        // --- Audio & Haptic Feedback ---
+        let synth;
+        
+        async function initAudio() {
+            if (synth || Tone.context.state === 'running') return;
+            await Tone.start();
+            synth = new Tone.Synth().toDestination();
+            console.log("Audio context started");
+        }
+
+        function playSoundAndVibrate(action) {
+            if (!synth) return;
+            
+            const now = Tone.now();
+            switch(action) {
+                case 'arrive':
+                    synth.triggerAttackRelease("C4", "8n", now);
+                    synth.triggerAttackRelease("G4", "8n", now + 0.2);
+                    if ('vibrate' in navigator) navigator.vibrate(50);
+                    break;
+                case 'depart':
+                    synth.triggerAttackRelease("G4", "8n", now);
+                    synth.triggerAttackRelease("C4", "8n", now + 0.2);
+                    if ('vibrate' in navigator) navigator.vibrate(50);
+                    break;
+                case 'extend':
+                    synth.triggerAttackRelease("A4", "16n", now);
+                    if ('vibrate' in navigator) navigator.vibrate(50);
+                    break;
+                case 'safe':
+                    synth.triggerAttackRelease("C5", "8n", now);
+                    if ('vibrate' in navigator) navigator.vibrate([50, 50, 50]);
+                    break;
+            }
+        }
+
 
         // --- Core Functions ---
         
@@ -633,20 +679,11 @@ function checkOverdueWorkers() {
         let visitInterval;
 
         async function startVisit() {
-            // 1. Pre-checks
+            playSoundAndVibrate('arrive');
+            
             if (!navigator.onLine) {
                 showAlert("No Network", "A network connection is required to start a visit.");
                 return;
-            }
-
-            // Mute Check (workaround)
-            try {
-                const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
-                await audio.play();
-                audio.pause();
-                audio.currentTime = 0;
-            } catch (error) {
-                 showAlert("Mute Warning", "Your phone appears to be on silent. You may not hear calls from your emergency contact if you become overdue.");
             }
             
             if (navigator.getBattery) {
@@ -666,6 +703,7 @@ function checkOverdueWorkers() {
                 anticipatedDepartureTime: anticipatedDepartureTime,
                 arrivalTimeForSheet: now.toISOString(),
                 alertState: 0, 
+                preWarningSent: false, // Flag for the 2-minute warning
             };
 
             saveState();
@@ -714,6 +752,7 @@ function checkOverdueWorkers() {
         }
 
         function depart() {
+            playSoundAndVibrate('depart');
             const now = new Date();
             sendToGoogleSheet({
                 ArrivalTime: state.activeVisit.arrivalTimeForSheet,
@@ -724,6 +763,7 @@ function checkOverdueWorkers() {
         }
 
         function extendVisit() {
+            playSoundAndVibrate('extend');
             state.activeVisit.anticipatedDepartureTime = new Date(state.activeVisit.anticipatedDepartureTime.getTime() + 10 * 60 * 1000);
             saveState();
             sendToGoogleSheet({
@@ -735,6 +775,7 @@ function checkOverdueWorkers() {
         }
 
         function iamSafe() {
+            playSoundAndVibrate('safe');
             const now = new Date();
              sendToGoogleSheet({
                 ArrivalTime: state.activeVisit.arrivalTimeForSheet,
@@ -772,6 +813,18 @@ function checkOverdueWorkers() {
             
             const now = new Date().getTime();
             const departureTime = state.activeVisit.anticipatedDepartureTime.getTime();
+            
+            const remainingMinutes = (departureTime - now) / (1000 * 60);
+
+            // Pre-departure warning at 2 minutes remaining
+            if (remainingMinutes <= 2 && remainingMinutes > 0 && !state.activeVisit.preWarningSent) {
+                state.activeVisit.preWarningSent = true; // Mark as sent to prevent re-triggering
+                if('vibrate' in navigator) {
+                    // A strong, long, and repeating pattern to get attention
+                    navigator.vibrate([600, 150, 600, 150, 600]); 
+                }
+            }
+            
             const overdueMinutes = (now - departureTime) / (1000 * 60);
             
             // App-side alert logic
@@ -781,6 +834,29 @@ function checkOverdueWorkers() {
                  sendToGoogleSheet({ ArrivalTime: state.activeVisit.arrivalTimeForSheet, AlarmStatus: 'ALERT SENT' });
                  document.getElementById('alertActiveContainer').classList.remove('hidden');
                  document.getElementById('normalButtonsContainer').classList.add('hidden');
+            } else if (overdueMinutes >= 13 && state.activeVisit.alertState < 1.5) {
+                 state.activeVisit.alertState = 1.5;
+                 saveState(); // Save state immediately to prevent re-triggering
+                 navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const { latitude, longitude } = position.coords;
+                        sendToGoogleSheet({
+                            ArrivalTime: state.activeVisit.arrivalTimeForSheet,
+                            LastKnownGPS: `${latitude},${longitude}`,
+                            GPSTimestamp: new Date().toISOString(),
+                            Notes: `Successfully retrieved GPS at 13 minutes overdue.`
+                        });
+                    },
+                    (error) => {
+                        console.error("GPS Error:", error);
+                        sendToGoogleSheet({
+                            ArrivalTime: state.activeVisit.arrivalTimeForSheet,
+                            Notes: `Failed to retrieve GPS at 13 minutes overdue.`
+                        });
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+
             } else if (overdueMinutes >= 10 && state.activeVisit.alertState < 1) {
                 state.activeVisit.alertState = 1;
                 if('vibrate' in navigator) navigator.vibrate([500, 200, 500, 200, 500]);
@@ -790,6 +866,9 @@ function checkOverdueWorkers() {
 
         // --- Event Listeners ---
         function initEventListeners() {
+            // A single 'pointerdown' event to initialize audio context on user interaction
+            document.body.addEventListener('pointerdown', initAudio, { once: true });
+
             // Navigation
             document.getElementById('settingsBtn').addEventListener('click', () => {
                 Object.keys(state.settings).forEach(key => {
@@ -919,12 +998,17 @@ function checkOverdueWorkers() {
 
                 // Touch events for mobile
                 btn.addEventListener('touchstart', (e) => {
-                    e.preventDefault(); // Prevent default browser actions
+                    // e.preventDefault(); // This can sometimes interfere with the long-press library
                     btn.classList.add('pressing');
-                }, { passive: false }); // Explicitly set passive to false
+                }, { passive: true }); // Setting passive: true can improve scroll performance
 
                 btn.addEventListener('touchend', () => btn.classList.remove('pressing'));
                 btn.addEventListener('touchcancel', () => btn.classList.remove('pressing'));
+                
+                // Prevent touch move from cancelling the press
+                btn.addEventListener('touchmove', (e) => {
+                     e.preventDefault();
+                }, { passive: false });
             });
 
             // Safe Button
