@@ -16,7 +16,7 @@
             display: none;
         }
         .page.active {
-            display: block;
+            display: flex; /* Changed to flex for better layout control */
         }
         .long-press-btn::after {
             content: '';
@@ -59,7 +59,6 @@
         .animate-fadeIn {
             animation: fadeIn 0.3s ease-in-out;
         }
-        /* Fix for button clicks on mobile where the SVG might intercept the tap */
         header button svg {
             pointer-events: none;
         }
@@ -70,8 +69,8 @@
     <div id="app-container" class="h-full flex flex-col">
         
         <!-- Main/Visit Page -->
-        <div id="mainPage" class="page active flex-grow flex flex-col p-4 bg-gray-800 animate-fadeIn">
-            <header class="flex justify-between items-center mb-4 relative z-10">
+        <div id="mainPage" class="page active h-full flex-col p-4 bg-gray-800 animate-fadeIn">
+            <header class="flex justify-between items-center mb-4 relative z-10 flex-shrink-0">
                 <h1 class="text-2xl font-bold text-blue-400">Lone Worker Safety</h1>
                 <div class="flex items-center space-x-1">
                     <button id="infoBtn" class="p-3 rounded-full hover:bg-gray-700">
@@ -83,35 +82,40 @@
                 </div>
             </header>
 
-            <!-- Location List -->
-            <div class="bg-gray-900 rounded-lg p-4 mb-4 flex-grow overflow-y-auto">
-                <h2 class="text-lg font-semibold mb-2 text-gray-300">Select Location</h2>
-                <div id="locationList" class="space-y-2">
-                    <!-- Locations will be dynamically inserted here -->
+            <!-- Main Content Scrollable Wrapper -->
+            <div class="flex-1 overflow-y-auto min-h-0 -mx-4 px-4">
+                <div class="flex flex-col h-full">
+                    <!-- Location List -->
+                    <div class="bg-gray-900 rounded-lg p-4 mb-4 flex-grow flex flex-col">
+                        <h2 class="text-lg font-semibold mb-2 text-gray-300">Select Location</h2>
+                        <div id="locationList" class="space-y-2 flex-grow overflow-y-auto">
+                            <!-- Locations will be dynamically inserted here -->
+                        </div>
+                        <button id="addLocationBtn" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><line x1="12" y1="5" y2="19"></line><line x1="5" y1="12" y2="19"></line></svg>
+                            Add New Location
+                        </button>
+                    </div>
+                    
+                    <!-- Visit Duration -->
+                    <div class="bg-gray-900 rounded-lg p-4 mb-4 flex-shrink-0">
+                        <div class="flex justify-between items-center mb-2">
+                            <h2 class="text-lg font-semibold text-gray-300">Visit Duration</h2>
+                            <span id="durationDisplay" class="text-xl font-bold text-blue-400">0 mins</span>
+                        </div>
+                        <input id="durationSlider" type="range" min="0" max="15" value="0" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb">
+                    </div>
+        
+                    <!-- Arrived Button -->
+                    <button id="arrivedBtn" data-long-press-delay="2000" disabled class="long-press-btn relative w-full bg-gray-700 text-gray-400 font-bold py-4 px-4 rounded-lg text-xl transition-colors duration-300 flex-shrink-0">
+                        Select Location & Duration
+                    </button>
                 </div>
-                <button id="addLocationBtn" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><line x1="12" y1="5" y2="19"></line><line x1="5" y1="12" y2="19"></line></svg>
-                    Add New Location
-                </button>
             </div>
-            
-            <!-- Visit Duration -->
-            <div class="bg-gray-900 rounded-lg p-4 mb-4">
-                <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-lg font-semibold text-gray-300">Visit Duration</h2>
-                    <span id="durationDisplay" class="text-xl font-bold text-blue-400">0 mins</span>
-                </div>
-                <input id="durationSlider" type="range" min="0" max="15" value="0" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb">
-            </div>
-
-            <!-- Arrived Button -->
-            <button id="arrivedBtn" data-long-press-delay="2000" disabled class="long-press-btn relative w-full bg-gray-700 text-gray-400 font-bold py-4 px-4 rounded-lg text-xl transition-colors duration-300">
-                Select Location & Duration
-            </button>
         </div>
 
         <!-- On-Site / Locked Screen Page -->
-        <div id="lockedPage" class="page bg-gray-900 h-full flex flex-col justify-around items-center p-6 text-center animate-fadeIn">
+        <div id="lockedPage" class="page h-full flex-col justify-around items-center p-6 text-center animate-fadeIn">
             <div>
                 <p class="text-xl text-gray-400">Currently at</p>
                 <h2 id="lockedLocationName" class="text-4xl font-bold mt-2 text-blue-400"></h2>
@@ -126,7 +130,7 @@
             <div id="alertActiveContainer" class="hidden w-full">
                 <div class="bg-red-900/50 border border-red-700 rounded-lg p-4 mb-4">
                     <h3 class="text-xl font-bold text-red-300">ALERT ACTIVE</h3>
-                    <p class="text-red-400">Notifications have been sent to your emergency contact.</p>
+                    <p class="text-red-400">Automated emails have been sent to your contacts.</p>
                 </div>
                 <button id="iamSafeBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-4 rounded-lg text-xl mb-4">
                     I AM SAFE
@@ -144,8 +148,8 @@
         </div>
 
         <!-- Settings Page -->
-        <div id="settingsPage" class="page h-full flex flex-col p-4 bg-gray-800 animate-fadeIn">
-             <header class="flex justify-between items-center mb-6 relative z-10">
+        <div id="settingsPage" class="page h-full flex-col p-4 bg-gray-800 animate-fadeIn">
+             <header class="flex justify-between items-center mb-6 relative z-10 flex-shrink-0">
                 <h1 class="text-2xl font-bold text-blue-400">Settings</h1>
                 <button id="closeSettingsBtn" class="p-3 rounded-full hover:bg-gray-700">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -167,10 +171,13 @@
                         <label for="emergencyName" class="block text-sm font-medium text-gray-400">Emergency Contact Name</label>
                         <input type="text" id="emergencyName" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
-                    <div class="relative">
+                    <div>
                         <label for="emergencyPhone" class="block text-sm font-medium text-gray-400">Emergency Contact Phone</label>
                         <input type="tel" id="emergencyPhone" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                        <button id="sendTestSmsBtn" class="absolute right-2 top-7 text-sm text-blue-400 hover:text-blue-300">Test SMS</button>
+                    </div>
+                    <div>
+                        <label for="emergencyEmail" class="block text-sm font-medium text-gray-400">Emergency Contact Email</label>
+                        <input type="email" id="emergencyEmail" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <div>
                         <label for="escalationName" class="block text-sm font-medium text-gray-400">Escalation Contact Name</label>
@@ -179,6 +186,10 @@
                     <div>
                         <label for="escalationPhone" class="block text-sm font-medium text-gray-400">Escalation Contact Phone</label>
                         <input type="tel" id="escalationPhone" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="escalationEmail" class="block text-sm font-medium text-gray-400">Escalation Contact Email</label>
+                        <input type="email" id="escalationEmail" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <div>
                         <label for="pinCode" class="block text-sm font-medium text-gray-400">4-Digit PIN (for secure actions)</label>
@@ -191,14 +202,14 @@
                 </div>
             </div>
 
-            <div class="pt-4">
+            <div class="pt-4 flex-shrink-0">
                 <button id="saveSettingsBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg">Save Settings</button>
             </div>
         </div>
     </div>
     
     <!-- Modals -->
-    <div id="modalBackdrop" class="fixed inset-0 bg-black bg-opacity-70 hidden flex items-center justify-center p-4">
+    <div id="modalBackdrop" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center p-4 z-50">
         
         <!-- Add/Edit Location Modal -->
         <div id="locationModal" class="hidden bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 animate-fadeIn">
@@ -225,89 +236,153 @@
         <div id="infoModal" class="hidden bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-6 animate-fadeIn max-h-[90vh] overflow-y-auto">
             <h2 class="text-xl font-bold mb-4">How to Use This App</h2>
             <div class="text-gray-300 space-y-4">
-                <p>This app helps ensure the safety of lone workers by logging visits and sending automated alerts if a worker is overdue.</p>
+                <p>This app logs visits to a central Google Sheet. The sheet itself is responsible for sending automated email alerts if a worker is overdue.</p>
+                
                 <div>
-                    <h3 class="font-semibold text-lg text-blue-400">1. Initial Setup (Crucial)</h3>
-                    <p>Go to Settings and fill in ALL fields. You MUST provide a Google Sheet Web App URL for data logging. Without it, the app cannot record your visits.</p>
+                    <h3 class="font-semibold text-lg text-blue-400">1. Google Sheet Setup</h3>
+                    <p>Create a new Google Sheet. Add these exact headers in the first row:</p>
+                    <p class="bg-gray-900 text-sm p-2 rounded-md mt-2">`Date`, `LocationName`, `LocationAddress`, `ArrivalTime`, `ActualDepartureTime`, `AnticipatedDepartureTime`, `AlarmStatus`, `WorkerName`, `WorkerPhoneNumber`, `EmergencyContactName`, `EmergencyContactNumber`, `EmergencyContactEmail`, `EscalationContactName`, `EscalationContactNumber`, `EscalationContactEmail`, `Notes`</p>
                 </div>
+
                 <div>
-                    <h3 class="font-semibold text-lg text-blue-400">2. Setting up Google Sheets</h3>
+                    <h3 class="font-semibold text-lg text-blue-400">2. Apps Script Setup</h3>
                     <ol class="list-decimal list-inside space-y-2 mt-2 pl-4">
-                        <li>Create a new Google Sheet. Add these headers in the first row: `Date`, `LocationName`, `LocationAddress`, `ArrivalTime`, `ActualDepartureTime`, `AnticipatedDepartureTime`, `AlarmStatus`, `WorkerName`, `WorkerPhoneNumber`, `EmergencyContact`, `EmergencyContactNumber`, `Notes`.</li>
-                        <li>In the Sheet, go to `Extensions > Apps Script`.</li>
-                        <li>Delete any existing code and paste the code provided below.</li>
+                        <li>In your Sheet, go to `Extensions > Apps Script`. Delete any existing code.</li>
+                        <li>Paste the entire code block provided below into the editor.</li>
                         <li>Click the "Save project" icon.</li>
-                        <li>Click the "Deploy" button, then "New deployment".</li>
-                        <li>For "Select type", choose "Web app".</li>
-                        <li>Under "Configuration", set "Execute as" to "Me".</li>
-                        <li>Crucially, set **"Who has access" to "Anyone"**. This does NOT make your sheet public, it only allows this script to add rows.</li>
-                        <li>Click "Deploy". You will need to "Authorize access" with your Google account. Click through the advanced/unsafe warnings.</li>
-                        <li>Copy the generated "Web app URL" and paste it into the Settings page of this app.</li>
+                        <li>Click "Deploy" > "New deployment". Choose "Web app" as the type.</li>
+                        <li>Set "Who has access" to "Anyone". This is required.</li>
+                        <li>Click "Deploy", authorize the script, and copy the **Web app URL**.</li>
+                        <li>Paste this URL into this app's Settings page.</li>
                     </ol>
                 </div>
+
+                <div>
+                    <h3 class="font-semibold text-lg text-blue-400">3. Activate Email Trigger (Crucial Step)</h3>
+                     <ol class="list-decimal list-inside space-y-2 mt-2 pl-4">
+                        <li>Go back to the Apps Script editor.</li>
+                        <li>Near the top of the editor, find the dropdown menu that says "doPost" or "Select function". Click it and choose **"setupTrigger"**.</li>
+                        <li>Click the **"Run"** button next to it.</li>
+                        <li>A dialog will ask for authorization again. This is to allow the script to run automatically and send emails. Complete the authorization steps.</li>
+                        <li>That's it! The script will now check for overdue workers every 15 minutes.</li>
+                    </ol>
+                </div>
+
                 <div class="mt-4">
                     <h3 class="font-semibold text-lg text-blue-400">Google Apps Script Code:</h3>
-                    <pre class="bg-gray-900 text-sm text-yellow-300 p-3 rounded-md overflow-x-auto"><code>function doPost(e) {
+                    <pre class="bg-gray-900 text-sm text-yellow-300 p-3 rounded-md overflow-x-auto"><code>// 1. This function handles data sent from the mobile app.
+function doPost(e) {
   try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
-    var data = JSON.parse(e.postData.contents);
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+    const data = JSON.parse(e.postData.contents);
     
-    // Find a row to update or append a new one
-    var lastRow = sheet.getLastRow();
-    var arrivalTimes = sheet.getRange(2, 4, lastRow > 1 ? lastRow - 1 : 1, 1).getValues();
-    var workerNames = sheet.getRange(2, 8, lastRow > 1 ? lastRow - 1 : 1, 1).getValues();
+    const lastRow = sheet.getLastRow();
+    const arrivalTimes = sheet.getRange(2, 4, lastRow > 1 ? lastRow - 1 : 1, 1).getValues();
+    const workerNames = sheet.getRange(2, 8, lastRow > 1 ? lastRow - 1 : 1, 1).getValues();
     
-    var rowToUpdate = -1;
-    // Search backwards for the latest entry for this worker
-    for (var i = arrivalTimes.length - 1; i >= 0; i--) {
+    let rowToUpdate = -1;
+    for (let i = arrivalTimes.length - 1; i >= 0; i--) {
       if (arrivalTimes[i][0] == data.ArrivalTime && workerNames[i][0] == data.WorkerName) {
-        rowToUpdate = i + 2; // +2 because sheets are 1-indexed and we skipped header
+        rowToUpdate = i + 2;
         break;
       }
     }
 
-    if (rowToUpdate != -1) {
+    if (rowToUpdate !== -1) {
       // Update existing row
-      var range = sheet.getRange(rowToUpdate, 1, 1, 12);
-      var currentValues = range.getValues()[0];
-      var newValues = [
-        data.Date || currentValues[0],
-        data.LocationName || currentValues[1],
-        data.LocationAddress || currentValues[2],
-        data.ArrivalTime || currentValues[3],
-        data.ActualDepartureTime || currentValues[4],
-        data.AnticipatedDepartureTime || currentValues[5],
-        data.AlarmStatus || currentValues[6],
-        data.WorkerName || currentValues[7],
-        data.WorkerPhoneNumber || currentValues[8],
-        data.EmergencyContact || currentValues[9],
-        data.EmergencyContactNumber || currentValues[10],
-        data.Notes ? (currentValues[11] ? currentValues[11] + '; ' + data.Notes : data.Notes) : currentValues[11]
+      const range = sheet.getRange(rowToUpdate, 1, 1, 16);
+      const currentValues = range.getValues()[0];
+      const newValues = [
+        data.Date || currentValues[0], data.LocationName || currentValues[1], data.LocationAddress || currentValues[2],
+        data.ArrivalTime || currentValues[3], data.ActualDepartureTime || currentValues[4], data.AnticipatedDepartureTime || currentValues[5],
+        data.AlarmStatus || currentValues[6], data.WorkerName || currentValues[7], data.WorkerPhoneNumber || currentValues[8],
+        data.EmergencyContactName || currentValues[9], data.EmergencyContactNumber || currentValues[10], data.EmergencyContactEmail || currentValues[11],
+        data.EscalationContactName || currentValues[12], data.EscalationContactNumber || currentValues[13], data.EscalationContactEmail || currentValues[14],
+        data.Notes ? (currentValues[15] ? currentValues[15] + '; ' + data.Notes : data.Notes) : currentValues[15]
       ];
       range.setValues([newValues]);
-
     } else {
       // Append new row
       sheet.appendRow([
-        data.Date, data.LocationName, data.LocationAddress,
-        data.ArrivalTime, data.ActualDepartureTime, data.AnticipatedDepartureTime,
-        data.AlarmStatus, data.WorkerName, data.WorkerPhoneNumber,
-        data.EmergencyContact, data.EmergencyContactNumber, data.Notes || ""
+        data.Date, data.LocationName, data.LocationAddress, data.ArrivalTime, "", data.AnticipatedDepartureTime,
+        data.AlarmStatus, data.WorkerName, data.WorkerPhoneNumber, data.EmergencyContactName, data.EmergencyContactNumber,
+        data.EmergencyContactEmail, data.EscalationContactName, data.EscalationContactNumber, data.EscalationContactEmail, ""
       ]);
     }
-
-    return ContentService.createTextOutput(JSON.stringify({ "status": "success", "row": rowToUpdate }))
-      .setMimeType(ContentService.MimeType.JSON);
-
+    return ContentService.createTextOutput(JSON.stringify({ "status": "success" })).setMimeType(ContentService.MimeType.JSON);
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ "status": "error", "message": error.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({ "status": "error", "message": error.toString() })).setMimeType(ContentService.MimeType.JSON);
   }
-}</code></pre>
-                </div>
-                 <div class="mt-4">
-                    <h3 class="font-semibold text-lg text-blue-400">Important Note on SMS</h3>
-                    <p>For security reasons, this web app cannot send SMS messages automatically. When an alert is triggered, it will open your phone's default messaging app with the message pre-filled. **You must press 'Send' yourself.**</p>
+}
+
+// 2. This function sets up the automated trigger. Run this once manually.
+function setupTrigger() {
+  // Deletes any existing triggers to avoid duplicates
+  ScriptApp.getProjectTriggers().forEach(trigger => ScriptApp.deleteTrigger(trigger));
+  // Creates a new trigger that runs 'checkOverdueWorkers' every 15 minutes
+  ScriptApp.newTrigger('checkOverdueWorkers')
+      .timeBased()
+      .everyMinutes(15)
+      .create();
+  SpreadsheetApp.getUi().alert('Trigger created successfully! The sheet will now check for overdue workers every 15 minutes.');
+}
+
+// 3. This function runs automatically to check for overdue workers and send emails.
+function checkOverdueWorkers() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  const dataRange = sheet.getDataRange();
+  const values = dataRange.getValues();
+  const now = new Date();
+
+  // Start from row 1 to skip header
+  for (let i = 1; i < values.length; i++) {
+    const row = values[i];
+    const status = row[6]; // Column G: AlarmStatus
+    
+    // Only process active visits that haven't been fully escalated
+    const activeStatuses = ["ON SITE", "ALERT SENT", "EMAIL_1_SENT", "EMAIL_2_SENT", "EMAIL_3_SENT"];
+    if (activeStatuses.includes(status)) {
+      const anticipatedDepartureTime = new Date(row[5]); // Column F
+      const overdueMinutes = (now.getTime() - anticipatedDepartureTime.getTime()) / 60000;
+
+      const workerName = row[7];
+      const locationName = row[1];
+      const gmapsLink = "https://www.google.com/maps?q=" + encodeURIComponent(row[2]);
+
+      const emailBody = 
+          `Worker: ${workerName} is visiting "${locationName}" and is now overdue.
+          Expected departure was: ${anticipatedDepartureTime.toLocaleString()}
+          Please call ${workerName} on ${row[8]} to check their status.
+          Location: ${gmapsLink}`;
+      
+      let recipient, subject, newStatus;
+
+      if (overdueMinutes >= 60 && status === "EMAIL_3_SENT") {
+        recipient = row[14]; // Escalation Email
+        subject = `ESCALATION: Lone Worker ${workerName} is 60+ minutes overdue`;
+        newStatus = "ESCALATION_SENT";
+      } else if (overdueMinutes >= 45 && status === "EMAIL_2_SENT") {
+        recipient = row[11]; // Emergency Email
+        subject = `FINAL NOTICE: Lone Worker ${workerName} is 45+ minutes overdue`;
+        newStatus = "EMAIL_3_SENT";
+      } else if (overdueMinutes >= 30 && status === "EMAIL_1_SENT") {
+        recipient = row[11]; // Emergency Email
+        subject = `ALERT: Lone Worker ${workerName} is 30+ minutes overdue`;
+        newStatus = "EMAIL_2_SENT";
+      } else if (overdueMinutes >= 15 && (status === "ON SITE" || status === "ALERT SENT")) {
+        recipient = row[11]; // Emergency Email
+        subject = `ALERT: Lone Worker ${workerName} is 15+ minutes overdue`;
+        newStatus = "EMAIL_1_SENT";
+      }
+      
+      if (recipient && newStatus) {
+        MailApp.sendEmail(recipient, subject, emailBody);
+        sheet.getRange(i + 1, 7).setValue(newStatus); // Update status in Column G
+      }
+    }
+  }
+}
+</code></pre>
                 </div>
             </div>
             <div class="mt-6 flex justify-end">
@@ -358,8 +433,8 @@
         let state = {
             settings: {
                 workerName: '', workerPhone: '',
-                emergencyName: '', emergencyPhone: '',
-                escalationName: '', escalationPhone: '',
+                emergencyName: '', emergencyPhone: '', emergencyEmail: '',
+                escalationName: '', escalationPhone: '', escalationEmail: '',
                 pinCode: '', googleSheetUrl: ''
             },
             locations: [],
@@ -374,14 +449,19 @@
         // --- Core Functions ---
         
         function navigate(page) {
-            Object.values(pages).forEach(p => p.classList.remove('active'));
+            Object.values(pages).forEach(p => {
+                p.classList.remove('active');
+                p.classList.add('hidden'); // Use hidden to ensure layout is cleared
+            });
             if (pages[page]) {
+                pages[page].classList.remove('hidden');
                 pages[page].classList.add('active');
             }
         }
         
         function showModal(modal, onShow) {
             modals.backdrop.classList.remove('hidden');
+            modals.backdrop.classList.add('flex'); // use flex for centering
             Object.values(modals).forEach(m => {
                 if(m !== modals.backdrop) m.classList.add('hidden');
             });
@@ -393,6 +473,7 @@
 
         function hideModals() {
             modals.backdrop.classList.add('hidden');
+            modals.backdrop.classList.remove('flex');
         }
 
         function showAlert(title, message) {
@@ -404,8 +485,10 @@
         function loadState() {
             const savedState = JSON.parse(localStorage.getItem('loneWorkerState'));
             if (savedState) {
-                state = { ...state, ...savedState };
-                // Ensure activeVisit times are Date objects
+                // Merge saved settings with default to avoid errors if new settings are added
+                const mergedSettings = { ...state.settings, ...savedState.settings };
+                state = { ...state, ...savedState, settings: mergedSettings };
+
                 if (state.activeVisit) {
                     state.activeVisit.startTime = new Date(state.activeVisit.startTime);
                     state.activeVisit.anticipatedDepartureTime = new Date(state.activeVisit.anticipatedDepartureTime);
@@ -482,14 +565,18 @@
                 ...data,
                 WorkerName: state.settings.workerName,
                 WorkerPhoneNumber: state.settings.workerPhone,
-                EmergencyContact: state.settings.emergencyName,
+                EmergencyContactName: state.settings.emergencyName,
                 EmergencyContactNumber: state.settings.emergencyPhone,
+                EmergencyContactEmail: state.settings.emergencyEmail,
+                EscalationContactName: state.settings.escalationName,
+                EscalationContactNumber: state.settings.escalationPhone,
+                EscalationContactEmail: state.settings.escalationEmail,
             };
             
             try {
                 const response = await fetch(state.settings.googleSheetUrl, {
                     method: 'POST',
-                    mode: 'no-cors', // Important for Apps Script web apps
+                    mode: 'no-cors', 
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),
                 });
@@ -549,15 +636,14 @@
             try {
                 const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
                 await audio.play();
+                audio.pause();
+                audio.currentTime = 0;
             } catch (error) {
                  showAlert("Mute Warning", "Your phone appears to be on silent. You may not hear calls from your emergency contact if you become overdue.");
             }
             
-            // Battery Check
             if (navigator.getBattery) {
                 const battery = await navigator.getBattery();
-                const batteryLifeSeconds = battery.dischargingTime;
-                const visitDurationSeconds = state.visitDurationMinutes * 60;
                 if (battery.level < 0.20 && !battery.charging) {
                      showAlert("Low Battery", `Battery is at ${Math.floor(battery.level * 100)}%. It may not last for the duration of this visit.`);
                 }
@@ -572,7 +658,7 @@
                 startTime: now,
                 anticipatedDepartureTime: anticipatedDepartureTime,
                 arrivalTimeForSheet: now.toISOString(),
-                alertState: 0, // 0: none, 1: 10m, 2: 15m, 3: 30m, 4: 45m, 5: 60m
+                alertState: 0, 
             };
 
             saveState();
@@ -647,14 +733,11 @@
                 ArrivalTime: state.activeVisit.arrivalTimeForSheet,
                 ActualDepartureTime: now.toISOString(),
                 AlarmStatus: 'SAFE - MANUALLY CLEARED',
+                Notes: 'Worker confirmed they are safe after an alert was triggered.'
             });
             
-            // SMS intent to cancel
-            const contactPhone = state.settings.emergencyPhone;
-            const workerName = state.settings.workerName;
-            const message = `CANCEL NOTIFICATION: ${workerName} has now confirmed they are safe.`;
-            window.location.href = `sms:${contactPhone}?body=${encodeURIComponent(message)}`;
-
+            showAlert("Confirmation", "Your status has been updated to SAFE. Your contacts will not receive further alerts for this visit.");
+            
             endVisit();
         }
 
@@ -684,34 +767,10 @@
             const departureTime = state.activeVisit.anticipatedDepartureTime.getTime();
             const overdueMinutes = (now - departureTime) / (1000 * 60);
             
-            const location = state.locations.find(l => l.id === state.activeVisit.locationId);
-            const workerName = state.settings.workerName;
-            const workerPhone = state.settings.workerPhone;
-            const anticipatedTimeStr = state.activeVisit.anticipatedDepartureTime.toLocaleTimeString();
-            const gmapsLink = `https://www.google.com/maps?q=${encodeURIComponent(location.address)}`;
-
-            const baseMessage = `Worker: ${workerName} is visiting "${location.name}" and is now overdue. Expected departure time was ${anticipatedTimeStr}. Please call ${workerName} on ${workerPhone} and check their status. Location: ${gmapsLink}`;
-
-            // Alert logic
-            if (overdueMinutes >= 60 && state.activeVisit.alertState < 5) {
-                state.activeVisit.alertState = 5;
-                const contactPhone = state.settings.escalationPhone;
-                const message = `ESCALATION: ${baseMessage}`;
-                window.location.href = `sms:${contactPhone}?body=${encodeURIComponent(message)}`;
-                sendToGoogleSheet({ ArrivalTime: state.activeVisit.arrivalTimeForSheet, AlarmStatus: 'ESCALATION SENT' });
-            } else if (overdueMinutes >= 45 && state.activeVisit.alertState < 4) {
-                 state.activeVisit.alertState = 4;
-                 const contactPhone = state.settings.emergencyPhone;
-                 const message = `FINAL NOTICE: ${baseMessage}`;
-                 window.location.href = `sms:${contactPhone}?body=${encodeURIComponent(message)}`;
-            } else if (overdueMinutes >= 30 && state.activeVisit.alertState < 3) {
-                 state.activeVisit.alertState = 3;
-                 const contactPhone = state.settings.emergencyPhone;
-                 window.location.href = `sms:${contactPhone}?body=${encodeURIComponent(baseMessage)}`;
-            } else if (overdueMinutes >= 15 && state.activeVisit.alertState < 2) {
-                 state.activeVisit.alertState = 2;
-                 const contactPhone = state.settings.emergencyPhone;
-                 window.location.href = `sms:${contactPhone}?body=${encodeURIComponent(baseMessage)}`;
+            // App-side alert logic
+            if (overdueMinutes >= 15 && state.activeVisit.alertState < 2) {
+                 state.activeVisit.alertState = 2; // Mark that we've passed the alert threshold
+                 // The app's only job is to update the sheet. The sheet handles the email.
                  sendToGoogleSheet({ ArrivalTime: state.activeVisit.arrivalTimeForSheet, AlarmStatus: 'ALERT SENT' });
                  document.getElementById('alertActiveContainer').classList.remove('hidden');
                  document.getElementById('normalButtonsContainer').classList.add('hidden');
@@ -726,7 +785,6 @@
         function initEventListeners() {
             // Navigation
             document.getElementById('settingsBtn').addEventListener('click', () => {
-                // Populate settings fields
                 Object.keys(state.settings).forEach(key => {
                     const input = document.getElementById(key);
                     if (input) input.value = state.settings[key];
@@ -752,17 +810,7 @@
                 showAlert("Success", "Settings have been saved.");
                 navigate('main');
             });
-
-            document.getElementById('sendTestSmsBtn').addEventListener('click', () => {
-                const phone = document.getElementById('emergencyPhone').value;
-                if (!phone) {
-                    showAlert("Missing Info", "Please enter an emergency contact phone number first.");
-                    return;
-                }
-                const message = "This is a test message from the Lone Worker Safety App.";
-                window.location.href = `sms:${phone}?body=${encodeURIComponent(message)}`;
-            });
-
+            
             // Location Modal
             document.getElementById('addLocationBtn').addEventListener('click', () => {
                 document.getElementById('locationModalTitle').textContent = 'Add New Location';
@@ -830,7 +878,6 @@
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
                         const { latitude, longitude } = position.coords;
-                        // Using a free reverse geocoding API. Replace if it becomes unreliable.
                         fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
                         .then(res => res.json())
                         .then(data => {
@@ -872,6 +919,7 @@
         // --- Initialization ---
         function init() {
             loadState();
+            // Default to main page on load unless there's an active visit
             if (state.activeVisit) {
                 enterLockedScreen();
             } else {
@@ -880,6 +928,12 @@
                 updateArrivedButtonState();
             }
             initEventListeners();
+            // Ensure all pages are hidden initially except the active one
+            Object.keys(pages).forEach(key => {
+                if (!pages[key].classList.contains('active')) {
+                    pages[key].classList.add('hidden');
+                }
+            });
         }
 
         window.addEventListener('load', init);
