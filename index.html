@@ -678,7 +678,29 @@ function checkOverdueWorkers() {
         // --- Visit Lifecycle ---
         let visitInterval;
 
-        async function startVisit() {
+        // New function wrapper to handle permissions before starting visit
+        function attemptStartVisit() {
+            if ('geolocation' in navigator) {
+                // Request permission up-front
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        console.log("GPS permission seems to be granted.");
+                        executeStartVisit(); // Permission granted, proceed
+                    },
+                    (error) => {
+                        console.error("Initial GPS check failed:", error.message);
+                        showAlert("GPS Not Available", "Could not access location. Overdue alerts will use the manually entered address. Please check location settings.");
+                        executeStartVisit(); // Still proceed, but with a warning
+                    },
+                    { timeout: 8000 } // Short timeout, we just want to trigger the prompt
+                );
+            } else {
+                showAlert("GPS Not Supported", "Geolocation is not supported by your browser.");
+                executeStartVisit(); // Geolocation not available at all
+            }
+        }
+
+        async function executeStartVisit() {
             playSoundAndVibrate('arrive');
             
             if (!navigator.onLine) {
@@ -829,14 +851,13 @@ function checkOverdueWorkers() {
             
             // App-side alert logic
             if (overdueMinutes >= 15 && state.activeVisit.alertState < 2) {
-                 state.activeVisit.alertState = 2; // Mark that we've passed the alert threshold
-                 // The app's only job is to update the sheet. The sheet handles the email.
+                 state.activeVisit.alertState = 2;
                  sendToGoogleSheet({ ArrivalTime: state.activeVisit.arrivalTimeForSheet, AlarmStatus: 'ALERT SENT' });
                  document.getElementById('alertActiveContainer').classList.remove('hidden');
                  document.getElementById('normalButtonsContainer').classList.add('hidden');
             } else if (overdueMinutes >= 13 && state.activeVisit.alertState < 1.5) {
                  state.activeVisit.alertState = 1.5;
-                 saveState(); // Save state immediately to prevent re-triggering
+                 saveState();
                  navigator.geolocation.getCurrentPosition(
                     (position) => {
                         const { latitude, longitude } = position.coords;
@@ -986,7 +1007,7 @@ function checkOverdueWorkers() {
             });
 
             // Long Press Buttons
-            arrivedBtn.addEventListener('long-press', startVisit);
+            arrivedBtn.addEventListener('long-press', attemptStartVisit); // Changed to the wrapper function
             departBtn.addEventListener('long-press', depart);
             extendBtn.addEventListener('long-press', () => withPinVerification(extendVisit));
             
@@ -998,14 +1019,12 @@ function checkOverdueWorkers() {
 
                 // Touch events for mobile
                 btn.addEventListener('touchstart', (e) => {
-                    // e.preventDefault(); // This can sometimes interfere with the long-press library
                     btn.classList.add('pressing');
-                }, { passive: true }); // Setting passive: true can improve scroll performance
+                }, { passive: true });
 
                 btn.addEventListener('touchend', () => btn.classList.remove('pressing'));
                 btn.addEventListener('touchcancel', () => btn.classList.remove('pressing'));
                 
-                // Prevent touch move from cancelling the press
                 btn.addEventListener('touchmove', (e) => {
                      e.preventDefault();
                 }, { passive: false });
@@ -1040,3 +1059,4 @@ function checkOverdueWorkers() {
     </script>
 </body>
 </html>
+
