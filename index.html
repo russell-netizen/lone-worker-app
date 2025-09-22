@@ -18,6 +18,12 @@
         .page.active {
             display: flex; /* Changed to flex for better layout control */
         }
+        .long-press-btn {
+            /* Prevent text selection on hold */
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none; /* IE 10+ */
+            user-select: none; /* Standard syntax */
+        }
         .long-press-btn::after {
             content: '';
             position: absolute;
@@ -905,11 +911,19 @@ function checkOverdueWorkers() {
             extendBtn.addEventListener('long-press', () => withPinVerification(extendVisit));
             
             document.querySelectorAll('.long-press-btn').forEach(btn => {
+                // Mouse events for desktop
                 btn.addEventListener('mousedown', () => btn.classList.add('pressing'));
                 btn.addEventListener('mouseup', () => btn.classList.remove('pressing'));
                 btn.addEventListener('mouseleave', () => btn.classList.remove('pressing'));
-                btn.addEventListener('touchstart', () => btn.classList.add('pressing'));
+
+                // Touch events for mobile
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault(); // Prevent default browser actions
+                    btn.classList.add('pressing');
+                }, { passive: false }); // Explicitly set passive to false
+
                 btn.addEventListener('touchend', () => btn.classList.remove('pressing'));
+                btn.addEventListener('touchcancel', () => btn.classList.remove('pressing'));
             });
 
             // Safe Button
@@ -941,4 +955,3 @@ function checkOverdueWorkers() {
     </script>
 </body>
 </html>
-
