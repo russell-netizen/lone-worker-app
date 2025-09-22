@@ -19,10 +19,11 @@
             display: flex; /* Changed to flex for better layout control */
         }
         .long-press-btn {
-            /* Prevent text selection on hold */
+            /* Prevent text selection and callout menus on hold */
             -webkit-user-select: none; /* Safari */
             -ms-user-select: none; /* IE 10+ */
             user-select: none; /* Standard syntax */
+            -webkit-touch-callout: none; /* iOS Safari */
         }
         .long-press-btn::after {
             content: '';
