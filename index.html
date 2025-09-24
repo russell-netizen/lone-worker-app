@@ -682,6 +682,18 @@ function checkOverdueWorkers() {
             playSoundAndVibrate('arrive');
             attemptStartVisit();
         }
+        
+        function handleDepartLongPress() {
+             playSoundAndVibrate('depart');
+             depart();
+        }
+
+        function handleExtendLongPress() {
+            withPinVerification(() => {
+                playSoundAndVibrate('extend');
+                extendVisit();
+            });
+        }
 
         function attemptStartVisit() {
             if ('geolocation' in navigator) {
@@ -776,7 +788,6 @@ function checkOverdueWorkers() {
         }
 
         function depart() {
-            playSoundAndVibrate('depart');
             const now = new Date();
             sendToGoogleSheet({
                 ArrivalTime: state.activeVisit.arrivalTimeForSheet,
@@ -787,7 +798,6 @@ function checkOverdueWorkers() {
         }
 
         function extendVisit() {
-            playSoundAndVibrate('extend');
             state.activeVisit.anticipatedDepartureTime = new Date(state.activeVisit.anticipatedDepartureTime.getTime() + 10 * 60 * 1000);
             saveState();
             sendToGoogleSheet({
@@ -1027,6 +1037,10 @@ function checkOverdueWorkers() {
                     element.classList.remove('pressing');
                 };
 
+                const preventMove = (e) => {
+                    e.preventDefault();
+                };
+
                 element.addEventListener('mousedown', start);
                 element.addEventListener('mouseup', cancel);
                 element.addEventListener('mouseleave', cancel);
@@ -1034,12 +1048,13 @@ function checkOverdueWorkers() {
                 element.addEventListener('touchstart', start, { passive: false });
                 element.addEventListener('touchend', cancel);
                 element.addEventListener('touchcancel', cancel);
-                element.addEventListener('touchmove', cancel, { passive: false });
+                // Prevent scrolling but DO NOT cancel the long press
+                element.addEventListener('touchmove', preventMove, { passive: false });
             }
 
             applyLongPress(arrivedBtn, handleArriveLongPress);
-            applyLongPress(document.getElementById('departBtn'), depart);
-            applyLongPress(document.getElementById('extendBtn'), () => withPinVerification(extendVisit));
+            applyLongPress(document.getElementById('departBtn'), handleDepartLongPress);
+            applyLongPress(document.getElementById('extendBtn'), handleExtendLongPress);
 
             // Safe Button is a normal click
             document.getElementById('iamSafeBtn').addEventListener('click', () => withPinVerification(iamSafe));
