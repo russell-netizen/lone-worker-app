@@ -678,7 +678,12 @@ function checkOverdueWorkers() {
         // --- Visit Lifecycle ---
         let visitInterval;
 
-        // New function wrapper to handle permissions before starting visit
+        function handleArriveLongPress() {
+            // Provide immediate feedback, then attempt the async start
+            playSoundAndVibrate('arrive');
+            attemptStartVisit();
+        }
+
         function attemptStartVisit() {
             if ('geolocation' in navigator) {
                 // Request permission up-front
@@ -701,8 +706,6 @@ function checkOverdueWorkers() {
         }
 
         async function executeStartVisit() {
-            playSoundAndVibrate('arrive');
-            
             if (!navigator.onLine) {
                 showAlert("No Network", "A network connection is required to start a visit.");
                 return;
@@ -1007,7 +1010,7 @@ function checkOverdueWorkers() {
             });
 
             // Long Press Buttons
-            arrivedBtn.addEventListener('long-press', attemptStartVisit); // Changed to the wrapper function
+            arrivedBtn.addEventListener('long-press', handleArriveLongPress); // Changed to the new wrapper
             departBtn.addEventListener('long-press', depart);
             extendBtn.addEventListener('long-press', () => withPinVerification(extendVisit));
             
