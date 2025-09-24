@@ -466,13 +466,22 @@ function checkOverdueWorkers() {
         
         async function initAudio() {
             if (synth || Tone.context.state === 'running') return;
-            await Tone.start();
-            synth = new Tone.Synth().toDestination();
-            console.log("Audio context started");
+            try {
+                await Tone.start();
+                synth = new Tone.Synth().toDestination();
+                console.log("Audio context started");
+            } catch (e) {
+                console.error("Could not start audio context:", e);
+            }
         }
 
-        function playSoundAndVibrate(action) {
-            if (!synth) return;
+        async function playSoundAndVibrate(action) {
+            await initAudio(); // Ensure audio context is running
+            if (!synth) {
+                // Fallback to just vibrate if synth fails to init
+                if ('vibrate' in navigator) navigator.vibrate(50);
+                return;
+            }
             
             const now = Tone.now();
             switch(action) {
@@ -678,7 +687,6 @@ function checkOverdueWorkers() {
         let visitInterval;
 
         function handleArriveLongPress() {
-            // Provide immediate feedback, then attempt the async start
             playSoundAndVibrate('arrive');
             attemptStartVisit();
         }
@@ -689,6 +697,7 @@ function checkOverdueWorkers() {
         }
 
         function handleExtendLongPress() {
+            // PIN verification now includes the feedback
             withPinVerification(() => {
                 playSoundAndVibrate('extend');
                 extendVisit();
@@ -697,22 +706,21 @@ function checkOverdueWorkers() {
 
         function attemptStartVisit() {
             if ('geolocation' in navigator) {
-                // Request permission up-front
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
                         console.log("GPS permission seems to be granted.");
-                        executeStartVisit(); // Permission granted, proceed
+                        executeStartVisit();
                     },
                     (error) => {
                         console.error("Initial GPS check failed:", error.message);
                         showAlert("GPS Not Available", "Could not access location. Overdue alerts will use the manually entered address. Please check location settings.");
-                        executeStartVisit(); // Still proceed, but with a warning
+                        executeStartVisit();
                     },
-                    { timeout: 8000 } // Short timeout, we just want to trigger the prompt
+                    { timeout: 8000 }
                 );
             } else {
                 showAlert("GPS Not Supported", "Geolocation is not supported by your browser.");
-                executeStartVisit(); // Geolocation not available at all
+                executeStartVisit();
             }
         }
 
@@ -1021,14 +1029,21 @@ function checkOverdueWorkers() {
             // Custom Long Press Implementation
             function applyLongPress(element, callback) {
                 let timer;
+                let startX, startY;
+                const moveTolerance = 10; // Pixels
 
                 const start = (e) => {
                     if (element.disabled) return;
-                    e.preventDefault();
+                    
+                    if (e.type === 'touchstart') {
+                        startX = e.touches[0].clientX;
+                        startY = e.touches[0].clientY;
+                    }
+                    
                     element.classList.add('pressing');
                     timer = setTimeout(() => {
                         callback();
-                        element.classList.remove('pressing'); // Reset after firing
+                        // No need to remove pressing class here, as the action (like changing page) will make it irrelevant
                     }, 2000);
                 };
 
@@ -1037,19 +1052,26 @@ function checkOverdueWorkers() {
                     element.classList.remove('pressing');
                 };
 
-                const preventMove = (e) => {
-                    e.preventDefault();
-                };
+                const move = (e) => {
+                    if (e.type === 'touchmove') {
+                        if (!timer) return;
+                        const deltaX = Math.abs(e.touches[0].clientX - startX);
+                        const deltaY = Math.abs(e.touches[0].clientY - startY);
 
+                        if (deltaX > moveTolerance || deltaY > moveTolerance) {
+                            cancel(e);
+                        }
+                    }
+                };
+                
                 element.addEventListener('mousedown', start);
                 element.addEventListener('mouseup', cancel);
                 element.addEventListener('mouseleave', cancel);
                 
-                element.addEventListener('touchstart', start, { passive: false });
+                element.addEventListener('touchstart', start, { passive: true });
                 element.addEventListener('touchend', cancel);
                 element.addEventListener('touchcancel', cancel);
-                // Prevent scrolling but DO NOT cancel the long press
-                element.addEventListener('touchmove', preventMove, { passive: false });
+                element.addEventListener('touchmove', move, { passive: false });
             }
 
             applyLongPress(arrivedBtn, handleArriveLongPress);
