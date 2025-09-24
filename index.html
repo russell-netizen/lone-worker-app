@@ -6,7 +6,6 @@
     <title>Lone Worker Safety</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/long-press-event/dist/long-press-event.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <style>
         body {
@@ -115,7 +114,7 @@
                     </div>
         
                     <!-- Arrived Button -->
-                    <button id="arrivedBtn" data-long-press-delay="2000" disabled class="long-press-btn relative w-full bg-gray-700 text-gray-400 font-bold py-4 px-4 rounded-lg text-xl transition-colors duration-300 flex-shrink-0">
+                    <button id="arrivedBtn" disabled class="long-press-btn relative w-full bg-gray-700 text-gray-400 font-bold py-4 px-4 rounded-lg text-xl transition-colors duration-300 flex-shrink-0">
                         Select Location & Duration
                     </button>
                 </div>
@@ -146,10 +145,10 @@
             </div>
 
             <div id="normalButtonsContainer" class="w-full space-y-4">
-                <button id="extendBtn" data-long-press-delay="2000" class="long-press-btn relative w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-4 rounded-lg text-xl">
+                <button id="extendBtn" class="long-press-btn relative w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-4 rounded-lg text-xl">
                     Extend 10 Mins
                 </button>
-                <button id="departBtn" data-long-press-delay="2000" class="long-press-btn relative w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-4 rounded-lg text-xl">
+                <button id="departBtn" class="long-press-btn relative w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-4 rounded-lg text-xl">
                     DEPART
                 </button>
             </div>
@@ -1009,31 +1008,40 @@ function checkOverdueWorkers() {
                 updateArrivedButtonState();
             });
 
-            // Long Press Buttons
-            arrivedBtn.addEventListener('long-press', handleArriveLongPress); // Changed to the new wrapper
-            departBtn.addEventListener('long-press', depart);
-            extendBtn.addEventListener('long-press', () => withPinVerification(extendVisit));
-            
-            document.querySelectorAll('.long-press-btn').forEach(btn => {
-                // Mouse events for desktop
-                btn.addEventListener('mousedown', () => btn.classList.add('pressing'));
-                btn.addEventListener('mouseup', () => btn.classList.remove('pressing'));
-                btn.addEventListener('mouseleave', () => btn.classList.remove('pressing'));
+            // Custom Long Press Implementation
+            function applyLongPress(element, callback) {
+                let timer;
 
-                // Touch events for mobile
-                btn.addEventListener('touchstart', (e) => {
-                    btn.classList.add('pressing');
-                }, { passive: true });
+                const start = (e) => {
+                    if (element.disabled) return;
+                    e.preventDefault();
+                    element.classList.add('pressing');
+                    timer = setTimeout(() => {
+                        callback();
+                        element.classList.remove('pressing'); // Reset after firing
+                    }, 2000);
+                };
 
-                btn.addEventListener('touchend', () => btn.classList.remove('pressing'));
-                btn.addEventListener('touchcancel', () => btn.classList.remove('pressing'));
+                const cancel = (e) => {
+                    clearTimeout(timer);
+                    element.classList.remove('pressing');
+                };
+
+                element.addEventListener('mousedown', start);
+                element.addEventListener('mouseup', cancel);
+                element.addEventListener('mouseleave', cancel);
                 
-                btn.addEventListener('touchmove', (e) => {
-                     e.preventDefault();
-                }, { passive: false });
-            });
+                element.addEventListener('touchstart', start, { passive: false });
+                element.addEventListener('touchend', cancel);
+                element.addEventListener('touchcancel', cancel);
+                element.addEventListener('touchmove', cancel, { passive: false });
+            }
 
-            // Safe Button
+            applyLongPress(arrivedBtn, handleArriveLongPress);
+            applyLongPress(document.getElementById('departBtn'), depart);
+            applyLongPress(document.getElementById('extendBtn'), () => withPinVerification(extendVisit));
+
+            // Safe Button is a normal click
             document.getElementById('iamSafeBtn').addEventListener('click', () => withPinVerification(iamSafe));
         }
 
