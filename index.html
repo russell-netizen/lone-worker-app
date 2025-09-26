@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Lone Worker Safety</title>
+    <!-- Favicon Links - Replace href with your logo's URL -->
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/pd5PQJY9/favicon-logo-for-LWS.png">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/pd5PQJY9/favicon-logo-for-LWS.png">
+    <!-- End Favicon Links -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
@@ -139,7 +143,7 @@
                     <h3 class="text-xl font-bold text-red-300">ALERT ACTIVE</h3>
                     <p class="text-red-400">Automated emails have been sent to your contacts.</p>
                 </div>
-                <button id="iamSafeBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-4 rounded-lg text-xl mb-4">
+                <button id="iamSafeBtn" class="long-press-btn relative w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-4 rounded-lg text-xl mb-4">
                     I AM SAFE
                 </button>
             </div>
@@ -299,6 +303,22 @@ function doPost(e) {
       // Update existing row
       const range = sheet.getRange(rowToUpdate, 1, 1, 18);
       const currentValues = range.getValues()[0];
+      
+      const isClearingAlert = (data.AlarmStatus === 'DEPARTED' || data.AlarmStatus === 'SAFE - MANUALLY CLEARED');
+      const wasInAlert = ["ALERT SENT", "EMAIL_1_SENT", "EMAIL_2_SENT", "EMAIL_3_SENT", "ESCALATION_SENT"].includes(currentValues[6]);
+
+      if (isClearingAlert && wasInAlert) {
+          const workerName = currentValues[7];
+          const locationName = currentValues[1];
+          const departureTime = new Date(data.ActualDepartureTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' });
+          const recipient = currentValues[11]; // Emergency Contact Email
+          if (recipient) {
+              const subject = `ALL CLEAR: Lone Worker ${workerName} is Safe`;
+              const body = `This is an automated message to confirm that worker ${workerName} has now safely departed from "${locationName}" at ${departureTime}.\n\nNo further action is required.`;
+              MailApp.sendEmail(recipient, subject, body);
+          }
+      }
+
       const newValues = [
         data.Date || currentValues[0], data.LocationName || currentValues[1], data.LocationAddress || currentValues[2],
         data.ArrivalTime || currentValues[3], data.ActualDepartureTime || currentValues[4], data.AnticipatedDepartureTime || currentValues[5],
@@ -359,14 +379,14 @@ function checkOverdueWorkers() {
 
       let locationInfo;
       if (lastKnownGPS && gpsTimestamp) {
-          locationInfo = `Last known GPS location (at ${gpsTimestamp.toLocaleString()}): https://www.google.com/maps?q=${lastKnownGPS}`;
+          locationInfo = `Last known GPS location (at ${gpsTimestamp.toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })}): https://www.google.com/maps?q=${lastKnownGPS}`;
       } else {
           locationInfo = `Location at arrival: https://www.google.com/maps?q=${encodeURIComponent(locationAddress)}`;
       }
 
       const emailBody = 
           `Worker: ${workerName} is visiting "${locationName}" and is now overdue.
-          Expected departure was: ${anticipatedDepartureTime.toLocaleString()}
+          Expected departure was: ${anticipatedDepartureTime.toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })}
           Please call ${workerName} on ${workerPhone} to check their status.
           ${locationInfo}`;
       
@@ -455,7 +475,7 @@ function checkOverdueWorkers() {
             locations: [],
             selectedLocationId: null,
             visitDurationMinutes: 0,
-            activeVisit: null, // { locationId, startTime, anticipatedDepartureTime, arrivalTimeForSheet, alertState, preWarningSent }
+            activeVisit: null, // { locationId, startTime, anticipatedDepartureTime, arrivalTimeForSheet, alertState, preWarningSent, lastGpsAttemptTime }
         };
 
         // --- Constants ---
@@ -502,6 +522,11 @@ function checkOverdueWorkers() {
                 case 'safe':
                     synth.triggerAttackRelease("C5", "8n", now);
                     if ('vibrate' in navigator) navigator.vibrate([50, 50, 50]);
+                    break;
+                case 'warning':
+                    synth.triggerAttackRelease("E5", "16n", now);
+                    synth.triggerAttackRelease("G5", "16n", now + 0.2);
+                     if ('vibrate' in navigator) navigator.vibrate([600, 150, 600, 150, 600]); 
                     break;
             }
         }
@@ -697,11 +722,14 @@ function checkOverdueWorkers() {
         }
 
         function handleExtendLongPress() {
-            // PIN verification now includes the feedback
             withPinVerification(() => {
                 playSoundAndVibrate('extend');
                 extendVisit();
             });
+        }
+        
+        function handleSafeLongPress() {
+             withPinVerification(iamSafe);
         }
 
         function attemptStartVisit() {
@@ -716,7 +744,7 @@ function checkOverdueWorkers() {
                         showAlert("GPS Not Available", "Could not access location. Overdue alerts will use the manually entered address. Please check location settings.");
                         executeStartVisit();
                     },
-                    { timeout: 8000 }
+                    { timeout: 20000, enableHighAccuracy: true }
                 );
             } else {
                 showAlert("GPS Not Supported", "Geolocation is not supported by your browser.");
@@ -747,13 +775,14 @@ function checkOverdueWorkers() {
                 anticipatedDepartureTime: anticipatedDepartureTime,
                 arrivalTimeForSheet: now.toISOString(),
                 alertState: 0, 
-                preWarningSent: false, // Flag for the 2-minute warning
+                preWarningSent: false,
+                lastGpsAttemptTime: null,
             };
 
             saveState();
             
             sendToGoogleSheet({
-                Date: now.toLocaleDateString(),
+                Date: now.toLocaleDateString('en-CA'),
                 LocationName: location.name,
                 LocationAddress: location.address,
                 ArrivalTime: state.activeVisit.arrivalTimeForSheet,
@@ -792,7 +821,7 @@ function checkOverdueWorkers() {
                 document.getElementById('countdownTimer').classList.add('text-red-500');
             }
             
-            document.getElementById('lockedAnticipatedTime').textContent = state.activeVisit.anticipatedDepartureTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'});
+            document.getElementById('lockedAnticipatedTime').textContent = new Date(state.activeVisit.anticipatedDepartureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'});
         }
 
         function depart() {
@@ -807,11 +836,12 @@ function checkOverdueWorkers() {
 
         function extendVisit() {
             state.activeVisit.anticipatedDepartureTime = new Date(state.activeVisit.anticipatedDepartureTime.getTime() + 10 * 60 * 1000);
+            state.activeVisit.preWarningSent = false; // Reset pre-warning
             saveState();
             sendToGoogleSheet({
                 ArrivalTime: state.activeVisit.arrivalTimeForSheet,
                 AnticipatedDepartureTime: state.activeVisit.anticipatedDepartureTime.toISOString(),
-                Notes: `Extended 10 mins at ${new Date().toLocaleTimeString()}`,
+                Notes: `Extended 10 mins at ${new Date().toISOString()}`,
             });
             updateLockedScreen();
         }
@@ -845,6 +875,29 @@ function checkOverdueWorkers() {
             document.getElementById('alertActiveContainer').classList.add('hidden');
             document.getElementById('normalButtonsContainer').classList.remove('hidden');
         }
+        
+        function tryGetGps() {
+            state.activeVisit.lastGpsAttemptTime = new Date().getTime();
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    sendToGoogleSheet({
+                        ArrivalTime: state.activeVisit.arrivalTimeForSheet,
+                        LastKnownGPS: `${latitude},${longitude}`,
+                        GPSTimestamp: new Date().toISOString(),
+                        Notes: `Successfully retrieved GPS while overdue.`
+                    });
+                },
+                (error) => {
+                    console.error("GPS Error:", error);
+                    sendToGoogleSheet({
+                        ArrivalTime: state.activeVisit.arrivalTimeForSheet,
+                        Notes: `Failed to retrieve GPS while overdue.`
+                    });
+                },
+                { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+            );
+        }
 
         function tick() {
             if (!state.activeVisit) {
@@ -860,48 +913,32 @@ function checkOverdueWorkers() {
 
             // Pre-departure warning at 2 minutes remaining
             if (remainingMinutes <= 2 && remainingMinutes > 0 && !state.activeVisit.preWarningSent) {
-                state.activeVisit.preWarningSent = true; // Mark as sent to prevent re-triggering
-                if('vibrate' in navigator) {
-                    // A strong, long, and repeating pattern to get attention
-                    navigator.vibrate([600, 150, 600, 150, 600]); 
-                }
+                state.activeVisit.preWarningSent = true;
+                playSoundAndVibrate('warning');
             }
             
             const overdueMinutes = (now - departureTime) / (1000 * 60);
             
             // App-side alert logic
-            if (overdueMinutes >= 15 && state.activeVisit.alertState < 2) {
-                 state.activeVisit.alertState = 2;
-                 sendToGoogleSheet({ ArrivalTime: state.activeVisit.arrivalTimeForSheet, AlarmStatus: 'ALERT SENT' });
-                 document.getElementById('alertActiveContainer').classList.remove('hidden');
-                 document.getElementById('normalButtonsContainer').classList.add('hidden');
-            } else if (overdueMinutes >= 13 && state.activeVisit.alertState < 1.5) {
-                 state.activeVisit.alertState = 1.5;
-                 saveState();
-                 navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const { latitude, longitude } = position.coords;
-                        sendToGoogleSheet({
-                            ArrivalTime: state.activeVisit.arrivalTimeForSheet,
-                            LastKnownGPS: `${latitude},${longitude}`,
-                            GPSTimestamp: new Date().toISOString(),
-                            Notes: `Successfully retrieved GPS at 13 minutes overdue.`
-                        });
-                    },
-                    (error) => {
-                        console.error("GPS Error:", error);
-                        sendToGoogleSheet({
-                            ArrivalTime: state.activeVisit.arrivalTimeForSheet,
-                            Notes: `Failed to retrieve GPS at 13 minutes overdue.`
-                        });
-                    },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-                );
-
-            } else if (overdueMinutes >= 10 && state.activeVisit.alertState < 1) {
-                state.activeVisit.alertState = 1;
-                if('vibrate' in navigator) navigator.vibrate([500, 200, 500, 200, 500]);
+            if (overdueMinutes > 0) {
+                 // Initial GPS check at 13 minutes
+                if (overdueMinutes >= 13 && state.activeVisit.alertState < 1.5) {
+                    state.activeVisit.alertState = 1.5;
+                    tryGetGps();
+                }
+                // Recurring GPS check every 20 minutes after the first one
+                if (state.activeVisit.lastGpsAttemptTime && (now - state.activeVisit.lastGpsAttemptTime) > 20 * 60 * 1000) {
+                    tryGetGps();
+                }
+                // Trigger alert status change at 15 mins
+                if (overdueMinutes >= 15 && state.activeVisit.alertState < 2) {
+                    state.activeVisit.alertState = 2;
+                    sendToGoogleSheet({ ArrivalTime: state.activeVisit.arrivalTimeForSheet, AlarmStatus: 'ALERT SENT' });
+                    document.getElementById('alertActiveContainer').classList.remove('hidden');
+                    document.getElementById('normalButtonsContainer').classList.add('hidden');
+                }
             }
+            
             saveState();
         }
 
@@ -1030,7 +1067,7 @@ function checkOverdueWorkers() {
             function applyLongPress(element, callback) {
                 let timer;
                 let startX, startY;
-                const moveTolerance = 10; // Pixels
+                const moveTolerance = 15; // Pixels allowed to move
 
                 const start = (e) => {
                     if (element.disabled) return;
@@ -1043,23 +1080,26 @@ function checkOverdueWorkers() {
                     element.classList.add('pressing');
                     timer = setTimeout(() => {
                         callback();
-                        // No need to remove pressing class here, as the action (like changing page) will make it irrelevant
+                        // Reset state on successful press
+                        clearTimeout(timer);
+                        timer = null;
+                        element.classList.remove('pressing');
                     }, 2000);
                 };
 
-                const cancel = (e) => {
+                const cancel = () => {
                     clearTimeout(timer);
+                    timer = null;
                     element.classList.remove('pressing');
                 };
 
                 const move = (e) => {
-                    if (e.type === 'touchmove') {
-                        if (!timer) return;
+                    if (e.type === 'touchmove' && timer) {
                         const deltaX = Math.abs(e.touches[0].clientX - startX);
                         const deltaY = Math.abs(e.touches[0].clientY - startY);
 
                         if (deltaX > moveTolerance || deltaY > moveTolerance) {
-                            cancel(e);
+                            cancel();
                         }
                     }
                 };
@@ -1077,9 +1117,7 @@ function checkOverdueWorkers() {
             applyLongPress(arrivedBtn, handleArriveLongPress);
             applyLongPress(document.getElementById('departBtn'), handleDepartLongPress);
             applyLongPress(document.getElementById('extendBtn'), handleExtendLongPress);
-
-            // Safe Button is a normal click
-            document.getElementById('iamSafeBtn').addEventListener('click', () => withPinVerification(iamSafe));
+            applyLongPress(document.getElementById('iamSafeBtn'), handleSafeLongPress);
         }
 
         // --- Initialization ---
@@ -1107,4 +1145,3 @@ function checkOverdueWorkers() {
     </script>
 </body>
 </html>
-
